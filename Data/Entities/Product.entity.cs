@@ -1,0 +1,31 @@
+
+using System.ComponentModel.DataAnnotations;
+
+namespace BoardGamesStore.Models;
+
+public class Product
+{
+  [Key]
+  public int Id { get; set; }
+
+  public required string Name { get; set; }
+  public string? Description { get; set; }
+  public decimal Price { get; set; }
+  public int Stock { get; set; }
+  public string? Category { get; set; } // TODO: Make enum or separate entity
+  public string? ImageUrl { get; set; }
+  public decimal BonusRate { get; set; }
+  public decimal MaxBonusPaymentPercent { get; set; }
+  public DateTime CreatedAt { get; set; }
+  public DateTime UpdatedAt { get; set; }
+
+  public ICollection<Comment>? Comments { get; set; }
+  public ICollection<CartItem>? CartItems { get; set; }
+  public ICollection<OrderItem>? OrderItems { get; set; }
+  public ICollection<SimilarProduct>? SimilarProducts { get; set; }
+  public ICollection<SimilarProduct>? RelatedToProducts { get; set; }
+  public ICollection<Wishlist>? Wishlists { get; set; }
+  public ICollection<Evaluation>? Evaluations { get; set; }
+  public ICollection<ProductReport>? ProductReports { get; set; }
+}
+
