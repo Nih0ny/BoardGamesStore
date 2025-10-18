@@ -6,43 +6,62 @@ public class RegisterDto
 {
   [Required]
   [EmailAddress]
-  public string Email { get; set; }
+  public required string Email { get; set; }
 
   [Required]
   [DataType(DataType.Text)]
-  public string Name { get; set; }
+  public required string Name { get; set; }
 
   [Required]
   [DataType(DataType.Password)]
-  public string Password { get; set; }
+  public required string Password { get; set; }
 
   [DataType(DataType.Password)]
-  [Compare("Password", ErrorMessage = "Паролі не співпадають.")]
-  public string ConfirmPassword { get; set; }
+  [Compare("Password", ErrorMessage = "Passwords do not match.")]
+  public required string ConfirmPassword { get; set; }
 }
 
 public class LoginDto
 {
   [Required]
   [EmailAddress]
-  public string Email { get; set; }
+  public required string Email { get; set; }
 
   [Required]
   [DataType(DataType.Password)]
-  public string Password { get; set; }
+  public required string Password { get; set; }
 }
 
 public class ChangePasswordDto
 {
   [Required]
   [DataType(DataType.Password)]
-  public string CurrentPassword { get; set; }
+  public required string CurrentPassword { get; set; }
 
   [Required]
   [DataType(DataType.Password)]
-  public string NewPassword { get; set; }
+  public required string NewPassword { get; set; }
 
   [DataType(DataType.Password)]
-  [Compare("NewPassword", ErrorMessage = "Нові паролі не співпадають.")]
-  public string ConfirmNewPassword { get; set; }
+  [Compare("NewPassword", ErrorMessage = "New passwords do not match.")]
+  public required string ConfirmNewPassword { get; set; }
+}
+
+public class ForgotPasswordDto
+{
+  [Required]
+  [EmailAddress]
+  public required string Email { get; set; }
+}
+
+public class ResetPasswordDto
+{
+
+  public required string UserId { get; set; }
+  public required string Token { get; set; }
+  public required string NewPassword { get; set; }
+
+  [DataType(DataType.Password)]
+  [Compare("NewPassword", ErrorMessage = "Passwords do not match.")]
+  public required string ConfirmNewPassword { get; set; }
 }

@@ -22,7 +22,7 @@ public class AccountController : ControllerBase
     var result = await _accountService.RegisterUserAsync(registerDto);
     if (result.Succeeded)
     {
-      return Ok(new { Message = "Реєстрація успішна. Будь ласка, перевірте свою пошту для підтвердження." });
+      return Ok(new { Message = "Registration successful. Please check your email to confirm." });
     }
 
     return BadRequest(result.Errors);
@@ -32,12 +32,12 @@ public class AccountController : ControllerBase
   public async Task<IActionResult> ConfirmEmail([FromQuery] string userId, [FromQuery] string token)
   {
     if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
-      return BadRequest("Неправильні параметри для підтвердження пошти.");
+      return BadRequest("Invalid parameters for email confirmation.");
 
     var result = await _accountService.ConfirmEmailAsync(userId, token);
     if (result.Succeeded)
     {
-      return Ok(new { Message = "Пошту успішно підтверджено." });
+      return Ok(new { Message = "Email successfully confirmed." });
     }
 
     return BadRequest(result.Errors);
@@ -52,14 +52,13 @@ public class AccountController : ControllerBase
       return Ok(new { Token = token });
     }
 
-    return Unauthorized(new { Message = "Неправильний логін або пароль, або пошта не підтверджена." });
+    return Unauthorized(new { Message = "Incorrect username or password, or email not confirmed." });
   }
 
-  [Authorize] // Тільки для авторизованих користувачів
+  [Authorize]
   [HttpPost("change-password")]
   public async Task<IActionResult> ChangePassword(ChangePasswordDto changePasswordDto)
   {
-    // Отримуємо ID поточного користувача з його "claims" (даних токена)
     var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null)
     {
@@ -69,7 +68,36 @@ public class AccountController : ControllerBase
     var result = await _accountService.ChangePasswordAsync(userId, changePasswordDto);
     if (result.Succeeded)
     {
-      return Ok(new { Message = "Пароль успішно змінено." });
+      return Ok(new { Message = "Password changed successfully." });
+    }
+
+    return BadRequest(result.Errors);
+  }
+
+  [HttpPost("forgot-password")]
+  public async Task<IActionResult> ForgotPassword(ForgotPasswordDto forgotPasswordDto)
+  {
+    var result = await _accountService.ForgotPasswordAsync(forgotPasswordDto.Email);
+    if (result.Succeeded)
+    {
+      return Ok(new { Message = "If an account with this email exists, a password reset link has been sent." });
+    }
+
+    // To prevent user enumeration, we can return a success message even if the user doesn't exist.
+    // The decision depends on the security policy. For this example, we'll return a generic success message.
+    return Ok(new { Message = "If an account with this email exists, a password reset link has been sent." });
+  }
+
+  [HttpPost("reset-password")]
+  public async Task<IActionResult> ResetPassword(ResetPasswordDto resetPasswordDto)
+  {
+    var result = await _accountService.ResetPasswordAsync(
+        resetPasswordDto.UserId,
+        resetPasswordDto.Token,
+        resetPasswordDto.NewPassword);
+    if (result.Succeeded)
+    {
+      return Ok(new { Message = "Password has been reset successfully." });
     }
 
     return BadRequest(result.Errors);

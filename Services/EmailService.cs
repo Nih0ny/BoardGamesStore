@@ -1,23 +1,63 @@
 // Services/EmailService.cs
 
+using MailKit.Net.Smtp;
+using BoardGamesStore.Services.Settings;
+using Microsoft.Extensions.ObjectPool;
+using Microsoft.Extensions.Options;
+using MimeKit;
+
 public class EmailService : IEmailService
 {
+    private readonly ObjectPool<SmtpClient> _clientPool;
+    private readonly SmtpSettings _smtpSettings;
     private readonly ILogger<EmailService> _logger;
 
-    public EmailService(ILogger<EmailService> logger)
+    public EmailService(
+        ObjectPool<SmtpClient> clientPool,
+        IOptions<SmtpSettings> smtpSettings,
+        ILogger<EmailService> logger)
     {
+        _clientPool = clientPool;
+        _smtpSettings = smtpSettings.Value;
         _logger = logger;
     }
 
-    public Task SendEmailAsync(string email, string subject, string message)
+    public async Task SendEmailAsync(string email, string subject, string message)
     {
-        // Тут буде ваша реальна логіка відправки пошти (наприклад, через SMTP або API)
-        _logger.LogInformation("--- НОВИЙ ЛИСТ ---");
-        _logger.LogInformation("Кому: {Email}", email);
-        _logger.LogInformation("Тема: {Subject}", subject);
-        _logger.LogInformation("Тіло: {Message}", message);
-        _logger.LogInformation("--- КІНЕЦЬ ЛИСТА ---");
+        var mime = new MimeMessage();
+        mime.From.Add(MailboxAddress.Parse(_smtpSettings.From));
+        mime.To.Add(MailboxAddress.Parse(email));
+        mime.Subject = subject;
+        mime.Body = new TextPart("html") { Text = message };
 
-        return Task.CompletedTask;
+        // Отримуємо SmtpClient з пулу
+        var client = _clientPool.Get();
+
+        try
+        {
+            _logger.LogInformation("Sending email to {Email}", email);
+            await client.SendAsync(mime);
+            _logger.LogInformation("Email sent to {Email}", email);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send email to {Email}", email);
+            // Тут можна додати логіку для обробки помилок, наприклад,
+            // якщо з'єднання розірвалося
+            throw;
+        }
+        finally
+        {
+            // Дуже важливо! Повертаємо клієнт назад у пул
+            _clientPool.Return(client);
+        }
     }
+}
+
+internal class MailKitEmailSender
+{
+}
+
+internal class EmailSettings
+{
 }

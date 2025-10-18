@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using BoardGamesStore.Services.Settings;
+using Microsoft.Extensions.ObjectPool;
+using MailKit.Net.Smtp;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,15 +61,30 @@ builder.Services.AddAuthentication(options =>
 });
 builder.Services.AddControllersWithViews();
 
+builder.Services.Configure<JwtSettings>(
+	builder.Configuration.GetSection("JwtSettings"));
+builder.Services.Configure<SmtpSettings>(
+	builder.Configuration.GetSection("SmtpSettings"));
+
+builder.Services.AddSingleton<IPooledObjectPolicy<SmtpClient>, SmtpClientPooledObjectPolicy>();
+
+builder.Services.AddSingleton(serviceProvider =>
+{
+	var policy = serviceProvider.GetRequiredService<IPooledObjectPolicy<SmtpClient>>();
+	var provider = new DefaultObjectPoolProvider
+	{
+		// Можна налаштувати максимальну кількість клієнтів у пулі, наприклад 10
+		MaximumRetained = 10
+	};
+	return provider.Create(policy);
+});
+
 builder.Services.AddScoped(typeof(IGenericService<>), typeof(GenericService<>));
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
-builder.Services.Configure<JwtSettings>(
-		builder.Configuration.GetSection("JwtSettings"));
 
 builder.Services.AddRazorPages();
-
 
 builder.Environment.EnvironmentName = "Development"; // Set environment to Development
 

@@ -2,6 +2,7 @@ namespace BoardGamesStore.Services.Settings;
 
 public class JwtSettings
 {
+  public required string Host { get; set; }
   public required string Secret { get; set; }
   public required string Issuer { get; set; }
   public required string Audience { get; set; }

@@ -8,11 +8,11 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.Web; // Потрібно для HttpUtility.UrlEncode
+using System.Web; // Needed for HttpUtility.UrlEncode
 
 public class AccountService : IAccountService
 {
-  private readonly UserManager<User> _userManager; // Припустимо, ваша модель називається User
+  private readonly UserManager<User> _userManager; // Assume your model is named User
   private readonly SignInManager<User> _signInManager;
   private readonly IEmailService _emailService;
   private readonly IPasswordHasher<User> _hasherService;
@@ -41,19 +41,19 @@ public class AccountService : IAccountService
 
     if (result.Succeeded)
     {
-      // Генеруємо токен для підтвердження пошти
+      // Generate token for email confirmation
       var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-      // Кодуємо токен, щоб він був безпечним для URL
+      // Encode the token so it is safe for URLs
       var encodedToken = HttpUtility.UrlEncode(token);
 
-      // Формуємо посилання (замініть "https://yourapi.com" на вашу реальну адресу)
-      var confirmationLink = $"https://yourapi.com/api/account/confirm-email?userId={user.Id}&token={encodedToken}";
+      // Build the link (replace "https://yourapi.com" with your real address)
+      var confirmationLink = $"http://localhost:5177/api/account/confirm-email?userId={user.Id}&token={encodedToken}";
 
-      // Відправляємо лист
+      // Send the email
       await _emailService.SendEmailAsync(
           user.Email,
-          "Підтвердіть вашу реєстрацію",
-          $"Будь ласка, підтвердіть вашу реєстрацію, перейшовши за посиланням: <a href='{confirmationLink}'>link</a>");
+          "Confirm your registration",
+          $"Please confirm your registration by clicking the following link: <a href='{confirmationLink}'>link</a>");
     }
 
     return result;
@@ -116,10 +116,10 @@ public class AccountService : IAccountService
     var user = await _userManager.FindByIdAsync(userId);
     if (user == null)
     {
-      return IdentityResult.Failed(new IdentityError { Description = "Користувача не знайдено." });
+      return IdentityResult.Failed(new IdentityError { Description = "User not found." });
     }
 
-    // ASP.NET Identity автоматично обробляє декодування токену
+    // ASP.NET Identity automatically handles token decoding
     return await _userManager.ConfirmEmailAsync(user, token);
   }
 
@@ -128,9 +128,41 @@ public class AccountService : IAccountService
     var user = await _userManager.FindByIdAsync(userId);
     if (user == null)
     {
-      return IdentityResult.Failed(new IdentityError { Description = "Користувача не знайдено." });
+      return IdentityResult.Failed(new IdentityError { Description = "User not found." });
     }
 
     return await _userManager.ChangePasswordAsync(user, changePasswordDto.CurrentPassword, changePasswordDto.NewPassword);
+  }
+
+  public async Task<IdentityResult> ForgotPasswordAsync(string email)
+  {
+    var user = await _userManager.FindByEmailAsync(email);
+    if (user == null || !await _userManager.IsEmailConfirmedAsync(user))
+    {
+      return IdentityResult.Failed(new IdentityError { Description = "User not found or email not confirmed." });
+    }
+
+    var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+    var encodedToken = HttpUtility.UrlEncode(token);
+
+    var resetLink = $"http://localhost:5177/reset-password?userId={user.Id}&token={encodedToken}";
+
+    await _emailService.SendEmailAsync(
+        email,
+        "Password Reset",
+        $"You can reset your password by clicking the following link: <a href='{resetLink}'>link</a>");
+
+    return IdentityResult.Success;
+  }
+
+  public async Task<IdentityResult> ResetPasswordAsync(string userId, string token, string newPassword)
+  {
+    var user = await _userManager.FindByIdAsync(userId);
+    if (user == null)
+    {
+      return IdentityResult.Failed(new IdentityError { Description = "User not found." });
+    }
+
+    return await _userManager.ResetPasswordAsync(user, token, newPassword);
   }
 }
