@@ -1,11 +1,12 @@
 ﻿using BoardGamesStore.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
 
 namespace BoardGamesStore.Data;
 
-public class ApplicationDbContext : IdentityDbContext<User, Role, int>
+public class ApplicationDbContext : IdentityDbContext<User, Role, int, IdentityUserClaim<int>, UserRole, IdentityUserLogin<int>, IdentityRoleClaim<int>, IdentityUserToken<int>>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
@@ -32,12 +33,20 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, int>
         modelBuilder.HasDefaultSchema("board_games_store");
         base.OnModelCreating(modelBuilder);
 
-        // User ↔ Role (one-to-many)
-        modelBuilder.Entity<User>()
-            .HasOne(u => u.Role)
-            .WithMany(r => r.Users)
-            .HasForeignKey(u => u.RoleId)
-            .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<UserRole>(userRole =>
+        {
+            userRole.HasKey(ur => new { ur.UserId, ur.RoleId });
+
+            userRole.HasOne(ur => ur.Role)
+                .WithMany(r => r.UserRoles)
+                .HasForeignKey(ur => ur.RoleId)
+                .IsRequired();
+
+            userRole.HasOne(ur => ur.User)
+                .WithMany(u => u.UserRoles)
+                .HasForeignKey(ur => ur.UserId)
+                .IsRequired();
+        });
 
         // Comment ↔ User & Product
         modelBuilder.Entity<Comment>()
@@ -53,10 +62,10 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, int>
             .OnDelete(DeleteBehavior.Cascade);
 
         // Cart ↔ User
-        modelBuilder.Entity<Cart>()
-            .HasOne(c => c.User)
-            .WithMany(u => u.Carts)
-            .HasForeignKey(c => c.UserId)
+        modelBuilder.Entity<User>()
+            .HasOne(u => u.Cart)
+            .WithOne(c => c.User)
+            .HasForeignKey<Cart>(c => c.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // CartItem ↔ Cart & Product
@@ -117,6 +126,9 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, int>
             .WithMany(o => o.BonusTransactions)
             .HasForeignKey(bt => bt.OrderId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<SimilarProduct>()
+        .HasKey(sp => new { sp.ProductId, sp.SimilarProductId });
 
         // SimilarProduct (self-referencing)
         modelBuilder.Entity<SimilarProduct>()

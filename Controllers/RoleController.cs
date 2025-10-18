@@ -7,151 +7,124 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using BoardGamesStore.Data;
 using BoardGamesStore.Models;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Identity;
 
 namespace BoardGamesStore.Controllers
 {
-    public class RoleController : Controller
+    [Route("api/[controller]")]
+    public class RoleController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        // Тепер використовуємо RoleManager для вашої кастомної моделі Role
+        private readonly RoleManager<Role> _roleManager;
 
-        public RoleController(ApplicationDbContext context)
+        public RoleController(RoleManager<Role> roleManager)
         {
-            _context = context;
+            _roleManager = roleManager;
         }
 
-        // GET: Role
-        public async Task<IActionResult> Index()
+        // GET: api/roles
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
         {
-            return View(await _context.Roles.ToListAsync());
+            var roles = await _roleManager.Roles.ToListAsync();
+            return Ok(roles);
         }
 
-        // GET: Role/Details/5
-        public async Task<IActionResult> Details(int? id)
+        // GET: api/roles/5
+        // ID тепер має тип int
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetById(int id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            // FindByIdAsync приймає ID у вигляді рядка, тому конвертуємо int
+            var role = await _roleManager.FindByIdAsync(id.ToString());
 
-            var role = await _context.Roles
-                .FirstOrDefaultAsync(m => m.Id == id);
             if (role == null)
             {
-                return NotFound();
+                return NotFound($"Роль з ID '{id}' не знайдено.");
             }
 
-            return View(role);
+            return Ok(role);
         }
 
-        // GET: Role/Create
-        public IActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: Role/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        // POST: api/roles
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("RoleName,Id,Name,NormalizedName,ConcurrencyStamp")] Role role)
+        public async Task<IActionResult> Create(RoleDto roleDto)
         {
-            if (ModelState.IsValid)
+            if (await _roleManager.RoleExistsAsync(roleDto.Name))
             {
-                _context.Add(role);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                return BadRequest("Роль з такою назвою вже існує.");
             }
-            return View(role);
+
+            // Створюємо екземпляр вашої кастомної ролі
+            var newRole = new Role { Name = roleDto.Name };
+
+            // Нормалізуємо ім'я для коректного пошуку
+            newRole.NormalizedName = _roleManager.NormalizeKey(newRole.Name);
+
+            var result = await _roleManager.CreateAsync(newRole);
+
+            if (result.Succeeded)
+            {
+                return CreatedAtAction(nameof(GetById), new { id = newRole.Id }, newRole);
+            }
+
+            return BadRequest(result.Errors);
         }
 
-        // GET: Role/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        // PUT: api/roles/5
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Update(int id, RoleDto roleDto)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            var role = await _roleManager.FindByIdAsync(id.ToString());
 
-            var role = await _context.Roles.FindAsync(id);
             if (role == null)
             {
-                return NotFound();
+                return NotFound($"Роль з ID '{id}' не знайдено.");
             }
-            return View(role);
+
+            // Оновлюємо стандартну властивість Name
+            role.Name = roleDto.Name;
+            role.NormalizedName = _roleManager.NormalizeKey(role.Name);
+
+            var result = await _roleManager.UpdateAsync(role);
+
+            if (result.Succeeded)
+            {
+                return NoContent();
+            }
+
+            return BadRequest(result.Errors);
         }
 
-        // POST: Role/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("RoleName,Id,Name,NormalizedName,ConcurrencyStamp")] Role role)
+        // DELETE: api/roles/5
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(int id)
         {
-            if (id != role.Id)
-            {
-                return NotFound();
-            }
+            var role = await _roleManager.FindByIdAsync(id.ToString());
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(role);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!RoleExists(role.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(role);
-        }
-
-        // GET: Role/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var role = await _context.Roles
-                .FirstOrDefaultAsync(m => m.Id == id);
             if (role == null)
             {
-                return NotFound();
+                return NotFound($"Роль з ID '{id}' не знайдено.");
             }
 
-            return View(role);
-        }
+            var result = await _roleManager.DeleteAsync(role);
 
-        // POST: Role/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var role = await _context.Roles.FindAsync(id);
-            if (role != null)
+            if (result.Succeeded)
             {
-                _context.Roles.Remove(role);
+                return NoContent();
             }
 
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-
-        private bool RoleExists(int id)
-        {
-            return _context.Roles.Any(e => e.Id == id);
+            return BadRequest(result.Errors);
         }
     }
+
+    // --- DTO (Data Transfer Object) ---
+    // Можна використовувати один DTO для створення та оновлення
+    public class RoleDto
+    {
+        [Required]
+        public required string Name { get; set; }
+    }
+
 }
