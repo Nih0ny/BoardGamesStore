@@ -12,6 +12,8 @@ RUN dotnet restore "./BoardGamesStore.csproj"
 # Копіюємо решту файлів проєкту та збираємо його
 COPY . .
 WORKDIR "/source"
+RUN dotnet tool install --global dotnet-ef
+ENV PATH="$PATH:/root/.dotnet/tools"
 RUN dotnet publish -c Release -o /app/publish
 
 # Етап 2: Створення кінцевого образу (Final Stage)
