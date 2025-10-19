@@ -6,12 +6,12 @@ WORKDIR /source
 # Копіюємо файли .csproj та відновлюємо залежності
 # Це кешується окремо від коду, щоб пришвидшити майбутні збірки
 COPY *.sln .
-COPY BoardGamesStore/*.csproj ./BoardGamesStore/
-RUN dotnet restore "./BoardGamesStore/BoardGamesStore.csproj"
+COPY *.csproj ./
+RUN dotnet restore "./BoardGamesStore.csproj"
 
 # Копіюємо решту файлів проєкту та збираємо його
 COPY . .
-WORKDIR "/source/BoardGamesStore"
+WORKDIR "/source"
 RUN dotnet publish -c Release -o /app/publish
 
 # Етап 2: Створення кінцевого образу (Final Stage)
