@@ -12,8 +12,6 @@ RUN dotnet restore "./BoardGamesStore.csproj"
 # Копіюємо решту файлів проєкту та збираємо його
 COPY . .
 WORKDIR "/source"
-RUN dotnet tool install --global dotnet-ef
-ENV PATH="$PATH:/root/.dotnet/tools"
 RUN dotnet publish -c Release -o /app/publish
 
 # Етап 2: Створення кінцевого образу (Final Stage)
@@ -26,4 +24,4 @@ COPY --from=build /app/publish .
 EXPOSE 8080
 
 # Точка входу для запуску застосунку
-CMD ["/bin/sh", "-c", "dotnet ef database update && dotnet BoardGamesStore.dll"]
+ENTRYPOINT ["dotnet", "BoardGamesStore.dll"]
