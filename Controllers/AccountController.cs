@@ -55,6 +55,15 @@ public class AccountController : ControllerBase
     return Unauthorized(new { Message = "Incorrect username or password, or email not confirmed." });
   }
 
+  [HttpPost("refresh")]
+  [Authorize(AuthenticationSchemes = "RefreshToken")] // Явно вказуємо схему
+  public IActionResult RefreshToken()
+  {
+
+
+    return Ok(new { NewAccessToken = "...", NewRefreshToken = "..." });
+  }
+
   [Authorize]
   [HttpPost("change-password")]
   public async Task<IActionResult> ChangePassword(ChangePasswordDto changePasswordDto)

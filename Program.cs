@@ -29,33 +29,47 @@ builder.Services.AddIdentity<User, Role>(options =>
 	.AddDefaultTokenProviders();
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = jwtSettings["Secret"] ?? throw new InvalidOperationException("JWT Secret key not configured.");
+var accessSecretKey = jwtSettings["AccessSecret"];
+var refreshSecretKey = jwtSettings["RefreshSecret"];
 var issuer = jwtSettings["Issuer"];
-var audience = jwtSettings["Audience"];
+var apiAudience = jwtSettings["AccessAudience"];
+var refreshAudience = jwtSettings["RefreshAudience"];
 
 builder.Services.AddAuthentication(options =>
 {
-	// Встановлення JwtBearer як схеми за замовчуванням
-	options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-	options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+	// Схемою за замовчуванням залишаємо перевірку Access токена
+	options.DefaultAuthenticateScheme = "AccessToken";
+	options.DefaultChallengeScheme = "AccessToken";
 })
-.AddJwtBearer(options =>
+// 1. Схема для Access Token
+.AddJwtBearer("AccessToken", options =>
 {
 	options.TokenValidationParameters = new TokenValidationParameters
 	{
-		// 1. Параметри валідації
-		ValidateIssuer = true, // Валідувати видавця токена
-		ValidateAudience = true, // Валідувати одержувача токена
-		ValidateLifetime = true, // Валідувати час життя токена (expirence)
-		ValidateIssuerSigningKey = true, // Валідувати підпис (найважливіше!)
+		ValidateIssuer = true,
+		ValidateAudience = true,
+		ValidateLifetime = true, // Перевіряємо, чи токен не прострочений
+		ValidateIssuerSigningKey = true,
 
-		// 2. Фактичні значення для валідації
 		ValidIssuer = issuer,
-		ValidAudience = audience,
-		IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+		ValidAudience = apiAudience, // Аудиторія для API
+		IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(accessSecretKey)),
+		ClockSkew = TimeSpan.Zero
+	};
+})
+// 2. Схема для Refresh Token
+.AddJwtBearer("RefreshToken", options =>
+{
+	options.TokenValidationParameters = new TokenValidationParameters
+	{
+		ValidateIssuer = true,
+		ValidateAudience = true,
+		ValidateLifetime = true, // Також перевіряємо час життя, це важливо!
+		ValidateIssuerSigningKey = true,
 
-		// 3. Додаткові налаштування
-		// Невеликий запас часу для валідації через розбіжність часу між серверами
+		ValidIssuer = issuer,
+		ValidAudience = refreshAudience, // Інша аудиторія для сервісу оновлення
+		IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(refreshSecretKey)),
 		ClockSkew = TimeSpan.Zero
 	};
 });
@@ -65,6 +79,13 @@ builder.Services.Configure<JwtSettings>(
 	builder.Configuration.GetSection("JwtSettings"));
 builder.Services.Configure<SmtpSettings>(
 	builder.Configuration.GetSection("SmtpSettings"));
+
+// builder.Services.AddStackExchangeRedisCache(options =>
+// {
+// 	// Беремо рядок підключення з appsettings.json
+// 	options.Configuration = builder.Configuration.GetConnectionString("Valkey");
+// 	options.InstanceName = "BGS_"; // Префікс для ключів кешу (корисно, якщо кеш спільний)
+// });
 
 builder.Services.AddSingleton<IPooledObjectPolicy<SmtpClient>, SmtpClientPooledObjectPolicy>();
 
