@@ -24,4 +24,4 @@ COPY --from=build /app/publish .
 EXPOSE 8080
 
 # Точка входу для запуску застосунку
-ENTRYPOINT ["dotnet", "BoardGamesStore.dll"]
+CMD ["/bin/sh", "-c", "dotnet ef database update && dotnet BoardGamesStore.dll"]
