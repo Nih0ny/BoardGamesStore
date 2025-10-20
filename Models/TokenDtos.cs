@@ -1,6 +1,6 @@
 using BoardGamesStore.Models;
 
-public class RefreshToken
+public class RefreshTokenDto
 {
   public string Token { get; set; } = null!;
 
