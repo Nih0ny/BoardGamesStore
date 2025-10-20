@@ -6,7 +6,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL;
 
 namespace BoardGamesStore.Data;
 
-public class ApplicationDbContext : IdentityDbContext<User, Role, int, IdentityUserClaim<int>, UserRole, IdentityUserLogin<int>, IdentityRoleClaim<int>, IdentityUserToken<int>>
+public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string, IdentityUserClaim<string>, IdentityUserRole<string>, IdentityUserLogin<string>, IdentityRoleClaim<string>, IdentityUserToken<string>>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
@@ -27,176 +27,226 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, int, IdentityU
     public DbSet<Evaluation> Evaluations { get; set; }
     public DbSet<ProductReport> ProductReports { get; set; }
     public DbSet<CommentReport> CommentReports { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasDefaultSchema("board_games_store");
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<UserRole>(userRole =>
+        // Налаштування схеми для Identity таблиць
+        modelBuilder.HasDefaultSchema("board_games_store");
+
+        // Product
+        modelBuilder.Entity<Product>(entity =>
         {
-            userRole.HasKey(ur => new { ur.UserId, ur.RoleId });
-
-            userRole.HasOne(ur => ur.Role)
-                .WithMany(r => r.UserRoles)
-                .HasForeignKey(ur => ur.RoleId)
-                .IsRequired();
-
-            userRole.HasOne(ur => ur.User)
-                .WithMany(u => u.UserRoles)
-                .HasForeignKey(ur => ur.UserId)
-                .IsRequired();
+            entity.ToTable("products");
+            entity.HasKey(p => p.Id);
+            entity.Property(p => p.Name).IsRequired().HasMaxLength(255);
+            entity.Property(p => p.Price).HasColumnType("decimal(18,2)");
+            entity.Property(p => p.BonusRate).HasColumnType("decimal(5,2)");
+            entity.Property(p => p.MaxBonusPaymentPercent).HasColumnType("decimal(5,2)");
         });
 
-        // Comment ↔ User & Product
-        modelBuilder.Entity<Comment>()
-            .HasOne(c => c.User)
-            .WithMany(u => u.Comments)
-            .HasForeignKey(c => c.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+        // Comment
+        modelBuilder.Entity<Comment>(entity =>
+        {
+            entity.ToTable("comments");
+            entity.HasKey(c => c.Id);
+            entity.HasOne(c => c.User)
+                .WithMany(u => u.Comments)
+                .HasForeignKey(c => c.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(c => c.Product)
+                .WithMany(p => p.Comments)
+                .HasForeignKey(c => c.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
-        modelBuilder.Entity<Comment>()
-            .HasOne(c => c.Product)
-            .WithMany(p => p.Comments)
-            .HasForeignKey(c => c.ProductId)
-            .OnDelete(DeleteBehavior.Cascade);
+        // Cart
+        modelBuilder.Entity<Cart>(entity =>
+        {
+            entity.ToTable("carts");
+            entity.HasKey(c => c.Id);
+            entity.HasOne(c => c.User)
+                .WithOne(u => u.Cart)
+                .HasForeignKey<Cart>(c => c.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
-        // Cart ↔ User
-        modelBuilder.Entity<User>()
-            .HasOne(u => u.Cart)
-            .WithOne(c => c.User)
-            .HasForeignKey<Cart>(c => c.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+        // CartItem
+        modelBuilder.Entity<CartItem>(entity =>
+        {
+            entity.ToTable("cart_items");
+            entity.HasKey(ci => ci.Id);
+            entity.HasOne(ci => ci.Cart)
+                .WithMany(c => c.Items)
+                .HasForeignKey(ci => ci.CartId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(ci => ci.Product)
+                .WithMany(p => p.CartItems)
+                .HasForeignKey(ci => ci.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
-        // CartItem ↔ Cart & Product
-        modelBuilder.Entity<CartItem>()
-            .HasOne(ci => ci.Cart)
-            .WithMany(c => c.Items)
-            .HasForeignKey(ci => ci.CartId)
-            .OnDelete(DeleteBehavior.Cascade);
+        // Order
+        modelBuilder.Entity<Order>(entity =>
+        {
+            entity.ToTable("orders");
+            entity.HasKey(o => o.Id);
+            entity.Property(o => o.Total).HasColumnType("decimal(18,2)");
+            entity.HasOne(o => o.User)
+                .WithMany(u => u.Orders)
+                .HasForeignKey(o => o.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(o => o.Status)
+                .WithMany(os => os.Orders)
+                .HasForeignKey(o => o.StatusId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
 
-        modelBuilder.Entity<CartItem>()
-            .HasOne(ci => ci.Product)
-            .WithMany(p => p.CartItems)
-            .HasForeignKey(ci => ci.ProductId)
-            .OnDelete(DeleteBehavior.Cascade);
+        // OrderStatus
+        modelBuilder.Entity<OrderStatus>(entity =>
+        {
+            entity.ToTable("order_statuses");
+            entity.HasKey(os => os.Id);
+            entity.Property(os => os.Status).IsRequired().HasMaxLength(100);
+        });
 
-        // Order ↔ User & Status
-        modelBuilder.Entity<Order>()
-            .HasOne(o => o.User)
-            .WithMany(u => u.Orders)
-            .HasForeignKey(o => o.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+        // OrderItem
+        modelBuilder.Entity<OrderItem>(entity =>
+        {
+            entity.ToTable("order_items");
+            entity.HasKey(oi => oi.Id);
+            entity.Property(oi => oi.Price).HasColumnType("decimal(18,2)");
+            entity.HasOne(oi => oi.Order)
+                .WithMany(o => o.OrderItems)
+                .HasForeignKey(oi => oi.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(oi => oi.Product)
+                .WithMany(p => p.OrderItems)
+                .HasForeignKey(oi => oi.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
 
-        modelBuilder.Entity<Order>()
-            .HasOne(o => o.Status)
-            .WithMany(s => s.Orders)
-            .HasForeignKey(o => o.StatusId)
-            .OnDelete(DeleteBehavior.Restrict);
+        // PaymentTransaction
+        modelBuilder.Entity<PaymentTransaction>(entity =>
+        {
+            entity.ToTable("payment_transactions");
+            entity.HasKey(pt => pt.Id);
+            entity.Property(pt => pt.Amount).HasColumnType("decimal(18,2)");
+            entity.HasOne(pt => pt.Order)
+                .WithMany(o => o.PaymentTransactions)
+                .HasForeignKey(pt => pt.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
-        // OrderItem ↔ Order & Product
-        modelBuilder.Entity<OrderItem>()
-            .HasOne(oi => oi.Order)
-            .WithMany(o => o.OrderItems)
-            .HasForeignKey(oi => oi.OrderId)
-            .OnDelete(DeleteBehavior.Cascade);
+        // BonusTransaction
+        modelBuilder.Entity<BonusTransaction>(entity =>
+        {
+            entity.ToTable("bonus_transactions");
+            entity.HasKey(bt => bt.Id);
+            entity.Property(bt => bt.Amount).HasColumnType("decimal(18,2)");
+            entity.HasOne(bt => bt.User)
+                .WithMany(u => u.BonusTransactions)
+                .HasForeignKey(bt => bt.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(bt => bt.Order)
+                .WithMany(o => o.BonusTransactions)
+                .HasForeignKey(bt => bt.OrderId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
 
-        modelBuilder.Entity<OrderItem>()
-            .HasOne(oi => oi.Product)
-            .WithMany(p => p.OrderItems)
-            .HasForeignKey(oi => oi.ProductId)
-            .OnDelete(DeleteBehavior.Restrict);
+        // SimilarProduct
+        modelBuilder.Entity<SimilarProduct>(entity =>
+        {
+            entity.ToTable("similar_products");
+            entity.HasKey(sp => new { sp.ProductId, sp.SimilarProductId });
+            entity.HasOne(sp => sp.Product)
+                .WithMany(p => p.SimilarProducts)
+                .HasForeignKey(sp => sp.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(sp => sp.SimilarTo)
+                .WithMany(p => p.RelatedToProducts)
+                .HasForeignKey(sp => sp.SimilarProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
-        // PaymentTransaction ↔ Order
-        modelBuilder.Entity<PaymentTransaction>()
-            .HasOne(pt => pt.Order)
-            .WithMany(o => o.PaymentTransactions)
-            .HasForeignKey(pt => pt.OrderId)
-            .OnDelete(DeleteBehavior.Cascade);
+        // Wishlist
+        modelBuilder.Entity<Wishlist>(entity =>
+        {
+            entity.ToTable("wishlists");
+            entity.HasKey(w => new { w.UserId, w.ProductId });
+            entity.HasOne(w => w.User)
+                .WithMany(u => u.Wishlists)
+                .HasForeignKey(w => w.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(w => w.Product)
+                .WithMany(p => p.Wishlists)
+                .HasForeignKey(w => w.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
-        // BonusTransaction ↔ User & Order
-        modelBuilder.Entity<BonusTransaction>()
-            .HasOne(bt => bt.User)
-            .WithMany(u => u.BonusTransactions)
-            .HasForeignKey(bt => bt.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+        // Evaluation
+        modelBuilder.Entity<Evaluation>(entity =>
+        {
+            entity.ToTable("evaluations");
+            entity.HasKey(e => new { e.UserId, e.ProductId });
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.Evaluations)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Product)
+                .WithMany(p => p.Evaluations)
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
-        modelBuilder.Entity<BonusTransaction>()
-            .HasOne(bt => bt.Order)
-            .WithMany(o => o.BonusTransactions)
-            .HasForeignKey(bt => bt.OrderId)
-            .OnDelete(DeleteBehavior.Cascade);
+        // ProductReport
+        modelBuilder.Entity<ProductReport>(entity =>
+        {
+            entity.ToTable("product_reports");
+            entity.HasKey(pr => pr.Id);
+            entity.HasOne(pr => pr.User)
+                .WithMany(u => u.ProductReports)
+                .HasForeignKey(pr => pr.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(pr => pr.Product)
+                .WithMany(p => p.ProductReports)
+                .HasForeignKey(pr => pr.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
-        modelBuilder.Entity<SimilarProduct>()
-        .HasKey(sp => new { sp.ProductId, sp.SimilarProductId });
+        // CommentReport
+        modelBuilder.Entity<CommentReport>(entity =>
+        {
+            entity.ToTable("comment_reports");
+            entity.HasKey(cr => cr.Id);
+            entity.HasOne(cr => cr.User)
+                .WithMany(u => u.CommentReports)
+                .HasForeignKey(cr => cr.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(cr => cr.Comment)
+                .WithMany(c => c.CommentReports)
+                .HasForeignKey(cr => cr.CommentId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
-        // SimilarProduct (self-referencing)
-        modelBuilder.Entity<SimilarProduct>()
-            .HasOne(sp => sp.Product)
-            .WithMany(p => p.SimilarProducts)
-            .HasForeignKey(sp => sp.ProductId)
-            .OnDelete(DeleteBehavior.Cascade);
+        // RefreshToken
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.ToTable("refresh_tokens");
+            entity.HasKey(rt => rt.Id);
+            entity.HasOne(rt => rt.User)
+                .WithMany(u => u.RefreshTokens)
+                .HasForeignKey(rt => rt.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(rt => rt.Token).IsUnique();
+        });
 
-        modelBuilder.Entity<SimilarProduct>()
-            .HasOne(sp => sp.SimilarTo)
-            .WithMany(p => p.RelatedToProducts)
-            .HasForeignKey(sp => sp.SimilarProductId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        // Wishlist ↔ User & Product
-        modelBuilder.Entity<Wishlist>()
-            .HasOne(w => w.User)
-            .WithMany(u => u.Wishlists)
-            .HasForeignKey(w => w.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<Wishlist>()
-            .HasOne(w => w.Product)
-            .WithMany(p => p.Wishlists)
-            .HasForeignKey(w => w.ProductId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        // Evaluation ↔ User & Product
-        modelBuilder.Entity<Evaluation>()
-            .HasOne(e => e.User)
-            .WithMany(u => u.Evaluations)
-            .HasForeignKey(e => e.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<Evaluation>()
-            .HasOne(e => e.Product)
-            .WithMany(p => p.Evaluations)
-            .HasForeignKey(e => e.ProductId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        // ProductReport ↔ User & Product
-        modelBuilder.Entity<ProductReport>()
-            .HasOne(pr => pr.User)
-            .WithMany(u => u.ProductReports)
-            .HasForeignKey(pr => pr.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<ProductReport>()
-            .HasOne(pr => pr.Product)
-            .WithMany(p => p.ProductReports)
-            .HasForeignKey(pr => pr.ProductId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        // CommentReport ↔ User & Comment
-        modelBuilder.Entity<CommentReport>()
-            .HasOne(cr => cr.User)
-            .WithMany(u => u.CommentReports)
-            .HasForeignKey(cr => cr.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<CommentReport>()
-            .HasOne(cr => cr.Comment)
-            .WithMany(c => c.CommentReports)
-            .HasForeignKey(cr => cr.CommentId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.HasAnnotation(
-            "Relational:HistoryTableSchema", "board_games_store"
-        );
+        // User (додаткові налаштування)
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.Property(u => u.Coins).HasColumnType("decimal(18,2)");
+        });
     }
 }

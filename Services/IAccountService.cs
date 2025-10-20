@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Identity;
 public interface IAccountService
 {
   Task<IdentityResult> RegisterUserAsync(RegisterDto registerDto);
-  Task<(bool Succeeded, string Token)> LoginUserAsync(LoginDto loginDto);
+  Task<(string AccessToken, string RefreshToken)> LoginUserAsync(LoginDto loginDto);
   Task<IdentityResult> ConfirmEmailAsync(string userId, string token);
   Task<IdentityResult> ChangePasswordAsync(string userId, ChangePasswordDto changePasswordDto);
   Task<IdentityResult> ForgotPasswordAsync(string email);

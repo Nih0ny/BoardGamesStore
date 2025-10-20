@@ -46,17 +46,27 @@ public class AccountController : ControllerBase
   [HttpPost("login")]
   public async Task<IActionResult> Login(LoginDto loginDto)
   {
-    var (succeeded, token) = await _accountService.LoginUserAsync(loginDto);
-    if (succeeded)
+    try
     {
-      return Ok(new { Token = token });
+      var (accessToken, refreshToken) = await _accountService.LoginUserAsync(loginDto);
+      var cookieOptions = new CookieOptions
+      {
+        HttpOnly = true,
+        Secure = false, // Встановіть в true, якщо використовуєте HTTPS
+        SameSite = SameSiteMode.Strict,
+        Expires = DateTime.UtcNow.AddDays(90)
+      };
+      Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+      return Ok(new { Token = accessToken });
     }
-
-    return Unauthorized(new { Message = "Incorrect username or password, or email not confirmed." });
+    catch (UnauthorizedAccessException e)
+    {
+      return Unauthorized(new { e.Message });
+    }
   }
 
   [HttpPost("refresh")]
-  [Authorize(AuthenticationSchemes = "RefreshToken")] // Явно вказуємо схему
+  // Явно вказуємо схему
   public IActionResult RefreshToken()
   {
 

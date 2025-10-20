@@ -9,8 +9,33 @@ using System.Text;
 using BoardGamesStore.Services.Settings;
 using Microsoft.Extensions.ObjectPool;
 using MailKit.Net.Smtp;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<JwtSettings>(
+	builder.Configuration.GetSection("JWT"));
+builder.Services.Configure<SmtpSettings>(
+	builder.Configuration.GetSection("Smtp"));
+
+builder.Services.AddCors(options =>
+{
+	options.AddPolicy("AllowAll", policy =>
+		{
+			policy.AllowAnyOrigin()
+						.AllowAnyMethod()
+						.AllowAnyHeader();
+		});
+
+	// Або більш обмежена політика для production:
+	options.AddPolicy("AllowSpecificOrigins", policy =>
+		{
+			policy.WithOrigins("http://localhost:3000", "https://yourdomain.com")
+						.AllowAnyMethod()
+						.AllowAnyHeader()
+						.AllowCredentials(); // Якщо потрібні cookies/credentials
+		});
+});
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -20,7 +45,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 ));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddIdentity<User, Role>(options =>
+builder.Services.AddIdentity<User, IdentityRole>(options =>
 	{
 		options.Password.RequireDigit = true;
 		options.Password.RequiredLength = 8;
@@ -28,63 +53,42 @@ builder.Services.AddIdentity<User, Role>(options =>
 	.AddEntityFrameworkStores<ApplicationDbContext>()
 	.AddDefaultTokenProviders();
 
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var accessSecretKey = jwtSettings["AccessSecret"];
-var refreshSecretKey = jwtSettings["RefreshSecret"];
-var issuer = jwtSettings["Issuer"];
-var apiAudience = jwtSettings["AccessAudience"];
-var refreshAudience = jwtSettings["RefreshAudience"];
+var secret = builder.Configuration["JWT:Secret"];
+var issuer = builder.Configuration["JWT:Issuer"];
+var audience = builder.Configuration["JWT:Audience"];
 
 builder.Services.AddAuthentication(options =>
 {
 	// Схемою за замовчуванням залишаємо перевірку Access токена
-	options.DefaultAuthenticateScheme = "AccessToken";
-	options.DefaultChallengeScheme = "AccessToken";
+	options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+	options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+	options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 })
 // 1. Схема для Access Token
-.AddJwtBearer("AccessToken", options =>
+.AddJwtBearer(options =>
 {
+	options.SaveToken = true;
+	options.RequireHttpsMetadata = false;
 	options.TokenValidationParameters = new TokenValidationParameters
 	{
 		ValidateIssuer = true,
 		ValidateAudience = true,
-		ValidateLifetime = true, // Перевіряємо, чи токен не прострочений
+		ValidateLifetime = true,
 		ValidateIssuerSigningKey = true,
 
 		ValidIssuer = issuer,
-		ValidAudience = apiAudience, // Аудиторія для API
-		IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(accessSecretKey)),
-		ClockSkew = TimeSpan.Zero
-	};
-})
-// 2. Схема для Refresh Token
-.AddJwtBearer("RefreshToken", options =>
-{
-	options.TokenValidationParameters = new TokenValidationParameters
-	{
-		ValidateIssuer = true,
-		ValidateAudience = true,
-		ValidateLifetime = true, // Також перевіряємо час життя, це важливо!
-		ValidateIssuerSigningKey = true,
-
-		ValidIssuer = issuer,
-		ValidAudience = refreshAudience, // Інша аудиторія для сервісу оновлення
-		IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(refreshSecretKey)),
+		ValidAudience = audience,
+		IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret!)),
 		ClockSkew = TimeSpan.Zero
 	};
 });
-builder.Services.AddControllersWithViews();
 
-builder.Services.Configure<JwtSettings>(
-	builder.Configuration.GetSection("JwtSettings"));
-builder.Services.Configure<SmtpSettings>(
-	builder.Configuration.GetSection("SmtpSettings"));
+builder.Services.AddControllersWithViews();
 
 // builder.Services.AddStackExchangeRedisCache(options =>
 // {
-// 	// Беремо рядок підключення з appsettings.json
 // 	options.Configuration = builder.Configuration.GetConnectionString("Valkey");
-// 	options.InstanceName = "BGS_"; // Префікс для ключів кешу (корисно, якщо кеш спільний)
+// 	options.InstanceName = "BGS_";
 // });
 
 builder.Services.AddSingleton<IPooledObjectPolicy<SmtpClient>, SmtpClientPooledObjectPolicy>();
@@ -101,6 +105,7 @@ builder.Services.AddSingleton(serviceProvider =>
 });
 
 builder.Services.AddScoped(typeof(IGenericService<>), typeof(GenericService<>));
+builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
@@ -141,6 +146,8 @@ else
 
 app.UseHttpsRedirection();
 app.UseRouting();
+
+app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();

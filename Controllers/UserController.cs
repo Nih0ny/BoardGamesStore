@@ -26,7 +26,7 @@ namespace BoardGamesStore.Controllers
         }
 
         // GET: User/Details/5
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(string? id)
         {
             if (id == null)
             {
@@ -86,7 +86,7 @@ namespace BoardGamesStore.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Name,Password,Coins,CreatedAt,UpdatedAt,Id,UserName,NormalizedUserName,Email,NormalizedEmail,EmailConfirmed,PasswordHash,SecurityStamp,ConcurrencyStamp,PhoneNumber,PhoneNumberConfirmed,TwoFactorEnabled,LockoutEnd,LockoutEnabled,AccessFailedCount")] User user)
+        public async Task<IActionResult> Edit(string id, [Bind("Name,Password,Coins,CreatedAt,UpdatedAt,Id,UserName,NormalizedUserName,Email,NormalizedEmail,EmailConfirmed,PasswordHash,SecurityStamp,ConcurrencyStamp,PhoneNumber,PhoneNumberConfirmed,TwoFactorEnabled,LockoutEnd,LockoutEnabled,AccessFailedCount")] User user)
         {
             if (id != user.Id)
             {
@@ -117,7 +117,7 @@ namespace BoardGamesStore.Controllers
         }
 
         // GET: User/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public async Task<IActionResult> Delete(string? id)
         {
             if (id == null)
             {
@@ -137,7 +137,7 @@ namespace BoardGamesStore.Controllers
         // POST: User/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(string id)
         {
             var user = await _context.Users.FindAsync(id);
             if (user != null)
@@ -149,7 +149,7 @@ namespace BoardGamesStore.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private bool UserExists(int id)
+        private bool UserExists(string id)
         {
             return _context.Users.Any(e => e.Id == id);
         }

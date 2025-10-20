@@ -1,7 +1,9 @@
+using BoardGamesStore.Models;
+
 namespace BoardGamesStore.Services;
 
 public interface ITokenService
 {
-  string GenerateAccessToken(string userId, string userEmail);
-  Task<string> GenerateRefreshTokenAsyn();
+  Task<string> GenerateJwtTokenAsync(User user);
+  Task<string> GenerateRefreshTokenAsync(User user, RefreshToken? oldRefreshToken = null);
 }

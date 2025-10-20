@@ -20,9 +20,7 @@ namespace BoardGamesStore.Migrations
                 schema: "board_games_store",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    RoleName = table.Column<string>(type: "text", nullable: false),
+                    Id = table.Column<string>(type: "text", nullable: false),
                     Name = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     ConcurrencyStamp = table.Column<string>(type: "text", nullable: true)
@@ -33,76 +31,12 @@ namespace BoardGamesStore.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "OrderStatuses",
-                schema: "board_games_store",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Status = table.Column<string>(type: "text", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_OrderStatuses", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Products",
-                schema: "board_games_store",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: true),
-                    Price = table.Column<decimal>(type: "numeric", nullable: false),
-                    Stock = table.Column<int>(type: "integer", nullable: false),
-                    Category = table.Column<string>(type: "text", nullable: true),
-                    ImageUrl = table.Column<string>(type: "text", nullable: true),
-                    BonusRate = table.Column<decimal>(type: "numeric", nullable: false),
-                    MaxBonusPaymentPercent = table.Column<decimal>(type: "numeric", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Products", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "AspNetRoleClaims",
-                schema: "board_games_store",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    RoleId = table.Column<int>(type: "integer", nullable: false),
-                    ClaimType = table.Column<string>(type: "text", nullable: true),
-                    ClaimValue = table.Column<string>(type: "text", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AspNetRoleClaims", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_AspNetRoleClaims_AspNetRoles_RoleId",
-                        column: x => x.RoleId,
-                        principalSchema: "board_games_store",
-                        principalTable: "AspNetRoles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "AspNetUsers",
                 schema: "board_games_store",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    Password = table.Column<string>(type: "text", nullable: false),
-                    RoleId = table.Column<int>(type: "integer", nullable: false),
-                    Coins = table.Column<decimal>(type: "numeric", nullable: false),
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    Coins = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -123,40 +57,64 @@ namespace BoardGamesStore.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_AspNetUsers_AspNetRoles_RoleId",
-                        column: x => x.RoleId,
-                        principalSchema: "board_games_store",
-                        principalTable: "AspNetRoles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "SimilarProducts",
+                name: "order_statuses",
                 schema: "board_games_store",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    ProductId = table.Column<int>(type: "integer", nullable: false),
-                    SimilarProductId = table.Column<int>(type: "integer", nullable: false)
+                    Status = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_SimilarProducts", x => x.Id);
+                    table.PrimaryKey("PK_order_statuses", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "products",
+                schema: "board_games_store",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    Price = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    Stock = table.Column<int>(type: "integer", nullable: false),
+                    Category = table.Column<string>(type: "text", nullable: true),
+                    ImageUrl = table.Column<string>(type: "text", nullable: true),
+                    BonusRate = table.Column<decimal>(type: "numeric(5,2)", nullable: false),
+                    MaxBonusPaymentPercent = table.Column<decimal>(type: "numeric(5,2)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_products", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetRoleClaims",
+                schema: "board_games_store",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    RoleId = table.Column<string>(type: "text", nullable: false),
+                    ClaimType = table.Column<string>(type: "text", nullable: true),
+                    ClaimValue = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetRoleClaims", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_SimilarProducts_Products_ProductId",
-                        column: x => x.ProductId,
+                        name: "FK_AspNetRoleClaims_AspNetRoles_RoleId",
+                        column: x => x.RoleId,
                         principalSchema: "board_games_store",
-                        principalTable: "Products",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_SimilarProducts_Products_SimilarProductId",
-                        column: x => x.SimilarProductId,
-                        principalSchema: "board_games_store",
-                        principalTable: "Products",
+                        principalTable: "AspNetRoles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -168,7 +126,7 @@ namespace BoardGamesStore.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    UserId = table.Column<string>(type: "text", nullable: false),
                     ClaimType = table.Column<string>(type: "text", nullable: true),
                     ClaimValue = table.Column<string>(type: "text", nullable: true)
                 },
@@ -189,10 +147,10 @@ namespace BoardGamesStore.Migrations
                 schema: "board_games_store",
                 columns: table => new
                 {
-                    LoginProvider = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
-                    ProviderKey = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    LoginProvider = table.Column<string>(type: "text", nullable: false),
+                    ProviderKey = table.Column<string>(type: "text", nullable: false),
                     ProviderDisplayName = table.Column<string>(type: "text", nullable: true),
-                    UserId = table.Column<int>(type: "integer", nullable: false)
+                    UserId = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -211,8 +169,8 @@ namespace BoardGamesStore.Migrations
                 schema: "board_games_store",
                 columns: table => new
                 {
-                    UserId = table.Column<int>(type: "integer", nullable: false),
-                    RoleId = table.Column<int>(type: "integer", nullable: false)
+                    UserId = table.Column<string>(type: "text", nullable: false),
+                    RoleId = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -238,9 +196,9 @@ namespace BoardGamesStore.Migrations
                 schema: "board_games_store",
                 columns: table => new
                 {
-                    UserId = table.Column<int>(type: "integer", nullable: false),
-                    LoginProvider = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
-                    Name = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    UserId = table.Column<string>(type: "text", nullable: false),
+                    LoginProvider = table.Column<string>(type: "text", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
                     Value = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
@@ -256,21 +214,21 @@ namespace BoardGamesStore.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Carts",
+                name: "carts",
                 schema: "board_games_store",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    UserId = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Carts", x => x.Id);
+                    table.PrimaryKey("PK_carts", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Carts_AspNetUsers_UserId",
+                        name: "FK_carts_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalSchema: "board_games_store",
                         principalTable: "AspNetUsers",
@@ -279,13 +237,70 @@ namespace BoardGamesStore.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Comments",
+                name: "refresh_tokens",
                 schema: "board_games_store",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    UserId = table.Column<string>(type: "text", nullable: false),
+                    Token = table.Column<string>(type: "text", nullable: false),
+                    Expires = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Created = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Revoked = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_refresh_tokens", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_refresh_tokens_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalSchema: "board_games_store",
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "orders",
+                schema: "board_games_store",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<string>(type: "text", nullable: false),
+                    StatusId = table.Column<int>(type: "integer", nullable: false),
+                    Total = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_orders", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_orders_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalSchema: "board_games_store",
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_orders_order_statuses_StatusId",
+                        column: x => x.StatusId,
+                        principalSchema: "board_games_store",
+                        principalTable: "order_statuses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "comments",
+                schema: "board_games_store",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<string>(type: "text", nullable: false),
                     ProductId = table.Column<int>(type: "integer", nullable: false),
                     Content = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -293,94 +308,61 @@ namespace BoardGamesStore.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Comments", x => x.Id);
+                    table.PrimaryKey("PK_comments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Comments_AspNetUsers_UserId",
+                        name: "FK_comments_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalSchema: "board_games_store",
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Comments_Products_ProductId",
+                        name: "FK_comments_products_ProductId",
                         column: x => x.ProductId,
                         principalSchema: "board_games_store",
-                        principalTable: "Products",
+                        principalTable: "products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Evaluations",
+                name: "evaluations",
                 schema: "board_games_store",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    UserId = table.Column<string>(type: "text", nullable: false),
                     ProductId = table.Column<int>(type: "integer", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false),
                     Rating = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Evaluations", x => x.Id);
+                    table.PrimaryKey("PK_evaluations", x => new { x.UserId, x.ProductId });
                     table.ForeignKey(
-                        name: "FK_Evaluations_AspNetUsers_UserId",
+                        name: "FK_evaluations_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalSchema: "board_games_store",
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Evaluations_Products_ProductId",
+                        name: "FK_evaluations_products_ProductId",
                         column: x => x.ProductId,
                         principalSchema: "board_games_store",
-                        principalTable: "Products",
+                        principalTable: "products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Orders",
+                name: "product_reports",
                 schema: "board_games_store",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<int>(type: "integer", nullable: false),
-                    StatusId = table.Column<int>(type: "integer", nullable: false),
-                    Total = table.Column<decimal>(type: "numeric", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Orders", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Orders_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalSchema: "board_games_store",
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Orders_OrderStatuses_StatusId",
-                        column: x => x.StatusId,
-                        principalSchema: "board_games_store",
-                        principalTable: "OrderStatuses",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ProductReports",
-                schema: "board_games_store",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    UserId = table.Column<string>(type: "text", nullable: false),
                     ProductId = table.Column<int>(type: "integer", nullable: false),
                     Reason = table.Column<string>(type: "text", nullable: true),
                     Status = table.Column<string>(type: "text", nullable: false),
@@ -388,55 +370,82 @@ namespace BoardGamesStore.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ProductReports", x => x.Id);
+                    table.PrimaryKey("PK_product_reports", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ProductReports_AspNetUsers_UserId",
+                        name: "FK_product_reports_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalSchema: "board_games_store",
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_ProductReports_Products_ProductId",
+                        name: "FK_product_reports_products_ProductId",
                         column: x => x.ProductId,
                         principalSchema: "board_games_store",
-                        principalTable: "Products",
+                        principalTable: "products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Wishlists",
+                name: "similar_products",
                 schema: "board_games_store",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<int>(type: "integer", nullable: false),
                     ProductId = table.Column<int>(type: "integer", nullable: false),
+                    SimilarProductId = table.Column<int>(type: "integer", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_similar_products", x => new { x.ProductId, x.SimilarProductId });
+                    table.ForeignKey(
+                        name: "FK_similar_products_products_ProductId",
+                        column: x => x.ProductId,
+                        principalSchema: "board_games_store",
+                        principalTable: "products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_similar_products_products_SimilarProductId",
+                        column: x => x.SimilarProductId,
+                        principalSchema: "board_games_store",
+                        principalTable: "products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "wishlists",
+                schema: "board_games_store",
+                columns: table => new
+                {
+                    UserId = table.Column<string>(type: "text", nullable: false),
+                    ProductId = table.Column<int>(type: "integer", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false),
                     AddedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Wishlists", x => x.Id);
+                    table.PrimaryKey("PK_wishlists", x => new { x.UserId, x.ProductId });
                     table.ForeignKey(
-                        name: "FK_Wishlists_AspNetUsers_UserId",
+                        name: "FK_wishlists_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalSchema: "board_games_store",
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Wishlists_Products_ProductId",
+                        name: "FK_wishlists_products_ProductId",
                         column: x => x.ProductId,
                         principalSchema: "board_games_store",
-                        principalTable: "Products",
+                        principalTable: "products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "CartItems",
+                name: "cart_items",
                 schema: "board_games_store",
                 columns: table => new
                 {
@@ -449,89 +458,57 @@ namespace BoardGamesStore.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CartItems", x => x.Id);
+                    table.PrimaryKey("PK_cart_items", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_CartItems_Carts_CartId",
+                        name: "FK_cart_items_carts_CartId",
                         column: x => x.CartId,
                         principalSchema: "board_games_store",
-                        principalTable: "Carts",
+                        principalTable: "carts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_CartItems_Products_ProductId",
+                        name: "FK_cart_items_products_ProductId",
                         column: x => x.ProductId,
                         principalSchema: "board_games_store",
-                        principalTable: "Products",
+                        principalTable: "products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "CommentReports",
+                name: "bonus_transactions",
                 schema: "board_games_store",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<int>(type: "integer", nullable: false),
-                    CommentId = table.Column<int>(type: "integer", nullable: false),
-                    Reason = table.Column<string>(type: "text", nullable: true),
-                    Status = table.Column<string>(type: "text", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_CommentReports", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_CommentReports_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalSchema: "board_games_store",
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_CommentReports_Comments_CommentId",
-                        column: x => x.CommentId,
-                        principalSchema: "board_games_store",
-                        principalTable: "Comments",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "BonusTransactions",
-                schema: "board_games_store",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    UserId = table.Column<string>(type: "text", nullable: false),
                     OrderId = table.Column<int>(type: "integer", nullable: true),
-                    Amount = table.Column<decimal>(type: "numeric", nullable: false),
+                    Amount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     Type = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_BonusTransactions", x => x.Id);
+                    table.PrimaryKey("PK_bonus_transactions", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_BonusTransactions_AspNetUsers_UserId",
+                        name: "FK_bonus_transactions_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalSchema: "board_games_store",
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_BonusTransactions_Orders_OrderId",
+                        name: "FK_bonus_transactions_orders_OrderId",
                         column: x => x.OrderId,
                         principalSchema: "board_games_store",
-                        principalTable: "Orders",
+                        principalTable: "orders",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
-                name: "OrderItems",
+                name: "order_items",
                 schema: "board_games_store",
                 columns: table => new
                 {
@@ -540,29 +517,29 @@ namespace BoardGamesStore.Migrations
                     OrderId = table.Column<int>(type: "integer", nullable: false),
                     ProductId = table.Column<int>(type: "integer", nullable: false),
                     Quantity = table.Column<int>(type: "integer", nullable: false),
-                    Price = table.Column<decimal>(type: "numeric", nullable: false)
+                    Price = table.Column<decimal>(type: "numeric(18,2)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_OrderItems", x => x.Id);
+                    table.PrimaryKey("PK_order_items", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_OrderItems_Orders_OrderId",
+                        name: "FK_order_items_orders_OrderId",
                         column: x => x.OrderId,
                         principalSchema: "board_games_store",
-                        principalTable: "Orders",
+                        principalTable: "orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_OrderItems_Products_ProductId",
+                        name: "FK_order_items_products_ProductId",
                         column: x => x.ProductId,
                         principalSchema: "board_games_store",
-                        principalTable: "Products",
+                        principalTable: "products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "PaymentTransactions",
+                name: "payment_transactions",
                 schema: "board_games_store",
                 columns: table => new
                 {
@@ -571,18 +548,50 @@ namespace BoardGamesStore.Migrations
                     OrderId = table.Column<int>(type: "integer", nullable: false),
                     PaymentSystem = table.Column<string>(type: "text", nullable: true),
                     TransactionId = table.Column<string>(type: "text", nullable: true),
-                    Amount = table.Column<decimal>(type: "numeric", nullable: false),
+                    Amount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     Status = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PaymentTransactions", x => x.Id);
+                    table.PrimaryKey("PK_payment_transactions", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_PaymentTransactions_Orders_OrderId",
+                        name: "FK_payment_transactions_orders_OrderId",
                         column: x => x.OrderId,
                         principalSchema: "board_games_store",
-                        principalTable: "Orders",
+                        principalTable: "orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "comment_reports",
+                schema: "board_games_store",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<string>(type: "text", nullable: false),
+                    CommentId = table.Column<int>(type: "integer", nullable: false),
+                    Reason = table.Column<string>(type: "text", nullable: true),
+                    Status = table.Column<string>(type: "text", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_comment_reports", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_comment_reports_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalSchema: "board_games_store",
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_comment_reports_comments_CommentId",
+                        column: x => x.CommentId,
+                        principalSchema: "board_games_store",
+                        principalTable: "comments",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -625,12 +634,6 @@ namespace BoardGamesStore.Migrations
                 column: "NormalizedEmail");
 
             migrationBuilder.CreateIndex(
-                name: "IX_AspNetUsers_RoleId",
-                schema: "board_games_store",
-                table: "AspNetUsers",
-                column: "RoleId");
-
-            migrationBuilder.CreateIndex(
                 name: "UserNameIndex",
                 schema: "board_games_store",
                 table: "AspNetUsers",
@@ -638,136 +641,132 @@ namespace BoardGamesStore.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_BonusTransactions_OrderId",
+                name: "IX_bonus_transactions_OrderId",
                 schema: "board_games_store",
-                table: "BonusTransactions",
+                table: "bonus_transactions",
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_BonusTransactions_UserId",
+                name: "IX_bonus_transactions_UserId",
                 schema: "board_games_store",
-                table: "BonusTransactions",
+                table: "bonus_transactions",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CartItems_CartId",
+                name: "IX_cart_items_CartId",
                 schema: "board_games_store",
-                table: "CartItems",
+                table: "cart_items",
                 column: "CartId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CartItems_ProductId",
+                name: "IX_cart_items_ProductId",
                 schema: "board_games_store",
-                table: "CartItems",
+                table: "cart_items",
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Carts_UserId",
+                name: "IX_carts_UserId",
                 schema: "board_games_store",
-                table: "Carts",
-                column: "UserId");
+                table: "carts",
+                column: "UserId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_CommentReports_CommentId",
+                name: "IX_comment_reports_CommentId",
                 schema: "board_games_store",
-                table: "CommentReports",
+                table: "comment_reports",
                 column: "CommentId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CommentReports_UserId",
+                name: "IX_comment_reports_UserId",
                 schema: "board_games_store",
-                table: "CommentReports",
+                table: "comment_reports",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Comments_ProductId",
+                name: "IX_comments_ProductId",
                 schema: "board_games_store",
-                table: "Comments",
+                table: "comments",
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Comments_UserId",
+                name: "IX_comments_UserId",
                 schema: "board_games_store",
-                table: "Comments",
+                table: "comments",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Evaluations_ProductId",
+                name: "IX_evaluations_ProductId",
                 schema: "board_games_store",
-                table: "Evaluations",
+                table: "evaluations",
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Evaluations_UserId",
+                name: "IX_order_items_OrderId",
                 schema: "board_games_store",
-                table: "Evaluations",
-                column: "UserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_OrderItems_OrderId",
-                schema: "board_games_store",
-                table: "OrderItems",
+                table: "order_items",
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_OrderItems_ProductId",
+                name: "IX_order_items_ProductId",
                 schema: "board_games_store",
-                table: "OrderItems",
+                table: "order_items",
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Orders_StatusId",
+                name: "IX_orders_StatusId",
                 schema: "board_games_store",
-                table: "Orders",
+                table: "orders",
                 column: "StatusId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Orders_UserId",
+                name: "IX_orders_UserId",
                 schema: "board_games_store",
-                table: "Orders",
+                table: "orders",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PaymentTransactions_OrderId",
+                name: "IX_payment_transactions_OrderId",
                 schema: "board_games_store",
-                table: "PaymentTransactions",
+                table: "payment_transactions",
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ProductReports_ProductId",
+                name: "IX_product_reports_ProductId",
                 schema: "board_games_store",
-                table: "ProductReports",
+                table: "product_reports",
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ProductReports_UserId",
+                name: "IX_product_reports_UserId",
                 schema: "board_games_store",
-                table: "ProductReports",
+                table: "product_reports",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SimilarProducts_ProductId",
+                name: "IX_refresh_tokens_Token",
                 schema: "board_games_store",
-                table: "SimilarProducts",
-                column: "ProductId");
+                table: "refresh_tokens",
+                column: "Token",
+                unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_SimilarProducts_SimilarProductId",
+                name: "IX_refresh_tokens_UserId",
                 schema: "board_games_store",
-                table: "SimilarProducts",
+                table: "refresh_tokens",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_similar_products_SimilarProductId",
+                schema: "board_games_store",
+                table: "similar_products",
                 column: "SimilarProductId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Wishlists_ProductId",
+                name: "IX_wishlists_ProductId",
                 schema: "board_games_store",
-                table: "Wishlists",
+                table: "wishlists",
                 column: "ProductId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Wishlists_UserId",
-                schema: "board_games_store",
-                table: "Wishlists",
-                column: "UserId");
         }
 
         /// <inheritdoc />
@@ -794,55 +793,63 @@ namespace BoardGamesStore.Migrations
                 schema: "board_games_store");
 
             migrationBuilder.DropTable(
-                name: "BonusTransactions",
+                name: "bonus_transactions",
                 schema: "board_games_store");
 
             migrationBuilder.DropTable(
-                name: "CartItems",
+                name: "cart_items",
                 schema: "board_games_store");
 
             migrationBuilder.DropTable(
-                name: "CommentReports",
+                name: "comment_reports",
                 schema: "board_games_store");
 
             migrationBuilder.DropTable(
-                name: "Evaluations",
+                name: "evaluations",
                 schema: "board_games_store");
 
             migrationBuilder.DropTable(
-                name: "OrderItems",
+                name: "order_items",
                 schema: "board_games_store");
 
             migrationBuilder.DropTable(
-                name: "PaymentTransactions",
+                name: "payment_transactions",
                 schema: "board_games_store");
 
             migrationBuilder.DropTable(
-                name: "ProductReports",
+                name: "product_reports",
                 schema: "board_games_store");
 
             migrationBuilder.DropTable(
-                name: "SimilarProducts",
+                name: "refresh_tokens",
                 schema: "board_games_store");
 
             migrationBuilder.DropTable(
-                name: "Wishlists",
+                name: "similar_products",
                 schema: "board_games_store");
 
             migrationBuilder.DropTable(
-                name: "Carts",
+                name: "wishlists",
                 schema: "board_games_store");
 
             migrationBuilder.DropTable(
-                name: "Comments",
+                name: "AspNetRoles",
                 schema: "board_games_store");
 
             migrationBuilder.DropTable(
-                name: "Orders",
+                name: "carts",
                 schema: "board_games_store");
 
             migrationBuilder.DropTable(
-                name: "Products",
+                name: "comments",
+                schema: "board_games_store");
+
+            migrationBuilder.DropTable(
+                name: "orders",
+                schema: "board_games_store");
+
+            migrationBuilder.DropTable(
+                name: "products",
                 schema: "board_games_store");
 
             migrationBuilder.DropTable(
@@ -850,11 +857,7 @@ namespace BoardGamesStore.Migrations
                 schema: "board_games_store");
 
             migrationBuilder.DropTable(
-                name: "OrderStatuses",
-                schema: "board_games_store");
-
-            migrationBuilder.DropTable(
-                name: "AspNetRoles",
+                name: "order_statuses",
                 schema: "board_games_store");
         }
     }
