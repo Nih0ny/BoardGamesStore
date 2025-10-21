@@ -42,20 +42,19 @@ public class AccountService : IAccountService
 
   public async Task<IdentityResult> RegisterUserAsync(RegisterDto registerDto)
   {
+    if (await _userManager.FindByEmailAsync(registerDto.Email) != null)
+    {
+      return IdentityResult.Failed(new IdentityError { Description = "Email is already registered." });
+    }
     var user = new User { UserName = registerDto.Name, Email = registerDto.Email };
-    var result = await _userManager.CreateAsync(user, _hasherService.HashPassword(user, registerDto.Password));
+    var result = await _userManager.CreateAsync(user, registerDto.Password);
 
     if (result.Succeeded)
     {
-      // Generate token for email confirmation
       var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-      // Encode the token so it is safe for URLs
       var encodedToken = HttpUtility.UrlEncode(token);
-
-      // Build the link (replace "https://yourapi.com" with your real address)
       var confirmationLink = $"http://localhost:5177/api/account/confirm-email?userId={user.Id}&token={encodedToken}";
 
-      // Send the email
       await _emailService.SendEmailAsync(
           user.Email,
           "Confirm your registration",
@@ -73,8 +72,9 @@ public class AccountService : IAccountService
       throw new UnauthorizedAccessException("Invalid login credentials.");
     }
 
+    Console.WriteLine("Attempting to sign in user: " + user.Email + " Password SignIn: " + loginDto.Password);
     var result = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, lockoutOnFailure: false);
-
+    Console.WriteLine("SignIn Result: " + result.Succeeded);
     if (result.Succeeded)
     {
       var accessToken = await _tokenService.GenerateJwtTokenAsync(user);
@@ -93,7 +93,6 @@ public class AccountService : IAccountService
       return IdentityResult.Failed(new IdentityError { Description = "User not found." });
     }
 
-    // ASP.NET Identity automatically handles token decoding
     return await _userManager.ConfirmEmailAsync(user, token);
   }
 

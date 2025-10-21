@@ -27,17 +27,15 @@ builder.Services.AddCors(options =>
 						.AllowAnyHeader();
 		});
 
-	// Або більш обмежена політика для production:
 	options.AddPolicy("AllowSpecificOrigins", policy =>
 		{
 			policy.WithOrigins("http://localhost:3000", "https://yourdomain.com")
 						.AllowAnyMethod()
 						.AllowAnyHeader()
-						.AllowCredentials(); // Якщо потрібні cookies/credentials
+						.AllowCredentials();
 		});
 });
 
-// Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 	options.UseNpgsql(connectionString,
@@ -59,12 +57,10 @@ var audience = builder.Configuration["JWT:Audience"];
 
 builder.Services.AddAuthentication(options =>
 {
-	// Схемою за замовчуванням залишаємо перевірку Access токена
 	options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
 	options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 	options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-// 1. Схема для Access Token
 .AddJwtBearer(options =>
 {
 	options.SaveToken = true;
@@ -91,6 +87,7 @@ builder.Services.AddControllersWithViews();
 // 	options.InstanceName = "BGS_";
 // });
 
+builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddSingleton<IPooledObjectPolicy<SmtpClient>, SmtpClientPooledObjectPolicy>();
 
 builder.Services.AddSingleton(serviceProvider =>
@@ -98,7 +95,6 @@ builder.Services.AddSingleton(serviceProvider =>
 	var policy = serviceProvider.GetRequiredService<IPooledObjectPolicy<SmtpClient>>();
 	var provider = new DefaultObjectPoolProvider
 	{
-		// Можна налаштувати максимальну кількість клієнтів у пулі, наприклад 10
 		MaximumRetained = 10
 	};
 	return provider.Create(policy);
@@ -108,11 +104,10 @@ builder.Services.AddScoped(typeof(IGenericService<>), typeof(GenericService<>));
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 
 builder.Services.AddRazorPages();
 
-builder.Environment.EnvironmentName = "Development"; // Set environment to Development
+builder.Environment.EnvironmentName = "Development";
 
 var app = builder.Build();
 

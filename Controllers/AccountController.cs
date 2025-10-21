@@ -1,19 +1,23 @@
 // Controllers/AccountController.cs
 
 using BoardGamesStore.Models;
+using BoardGamesStore.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 [ApiController]
 [Route("api/[controller]")]
 public class AccountController : ControllerBase
 {
   private readonly IAccountService _accountService;
+  private readonly ITokenService _tokenService;
 
-  public AccountController(IAccountService accountService)
+  public AccountController(IAccountService accountService, ITokenService tokenService)
   {
     _accountService = accountService;
+    _tokenService = tokenService;
   }
 
   [HttpPost("register")]
@@ -52,7 +56,7 @@ public class AccountController : ControllerBase
       var cookieOptions = new CookieOptions
       {
         HttpOnly = true,
-        Secure = false, // Встановіть в true, якщо використовуєте HTTPS
+        Secure = false, // true if using HTTPS
         SameSite = SameSiteMode.Strict,
         Expires = DateTime.UtcNow.AddDays(90)
       };
@@ -66,12 +70,23 @@ public class AccountController : ControllerBase
   }
 
   [HttpPost("refresh")]
-  // Явно вказуємо схему
-  public IActionResult RefreshToken()
+  public async Task<IActionResult> RefreshToken()
   {
-
-
-    return Ok(new { NewAccessToken = "...", NewRefreshToken = "..." });
+    var refreshToken = Request.Cookies["refreshToken"];
+    if (string.IsNullOrEmpty(refreshToken))
+    {
+      return Unauthorized(new { Message = "Refresh token is missing." });
+    }
+    var (newAccessToken, newRefreshToken) = await _tokenService.RefreshTokensAsync(refreshToken);
+    var cookieOptions = new CookieOptions
+    {
+      HttpOnly = true,
+      Secure = false, // true if using HTTPS
+      SameSite = SameSiteMode.Strict,
+      Expires = DateTime.UtcNow.AddDays(90)
+    };
+    Response.Cookies.Append("refreshToken", newRefreshToken, cookieOptions);
+    return Ok(new { Token = newAccessToken });
   }
 
   [Authorize]

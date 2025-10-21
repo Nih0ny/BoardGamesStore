@@ -6,4 +6,5 @@ public interface ITokenService
 {
   Task<string> GenerateJwtTokenAsync(User user);
   Task<string> GenerateRefreshTokenAsync(User user, RefreshToken? oldRefreshToken = null);
+  Task<(string AccessToken, string RefreshToken)> RefreshTokensAsync(string refreshToken);
 }

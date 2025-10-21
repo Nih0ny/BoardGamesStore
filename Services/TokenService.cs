@@ -75,10 +75,10 @@ public class TokenService : ITokenService
     return newRefreshTokenEntity.Token;
   }
 
-  public async Task<(string AccessToken, string RefreshToken)> RefreshTokensAsync(string RefreshToken)
+  public async Task<(string AccessToken, string RefreshToken)> RefreshTokensAsync(string refreshToken)
   {
     var refreshTokenEntity = await _context.RefreshTokens.Include(rt => rt.User)
-        .FirstOrDefaultAsync(rt => rt.Token == RefreshToken && rt.IsActive);
+        .FirstOrDefaultAsync(rt => rt.Token == refreshToken && !rt.Revoked.HasValue);
 
     if (refreshTokenEntity == null || refreshTokenEntity.IsExpired || refreshTokenEntity.User == null)
     {
