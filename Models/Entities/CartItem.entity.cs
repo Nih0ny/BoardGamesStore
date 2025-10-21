@@ -16,4 +16,3 @@ public class CartItem
   public int Quantity { get; set; }
   public DateTime AddedAt { get; set; }
 }
-
