@@ -42,9 +42,13 @@ public class AccountService : IAccountService
 
   public async Task<IdentityResult> RegisterUserAsync(RegisterDto registerDto)
   {
-    if (await _userManager.FindByEmailAsync(registerDto.Email) != null)
+    var existingUser = await _userManager.FindByEmailAsync(registerDto.Email);
+    if (existingUser != null)
     {
-      return IdentityResult.Failed(new IdentityError { Description = "Email is already registered." });
+      if (!await _userManager.IsEmailConfirmedAsync(existingUser))
+        await _userManager.DeleteAsync(existingUser);
+      else
+        return IdentityResult.Failed(new IdentityError { Description = "Email is already registered." });
     }
     var user = new User { UserName = registerDto.Name, Email = registerDto.Email };
     var result = await _userManager.CreateAsync(user, registerDto.Password);
