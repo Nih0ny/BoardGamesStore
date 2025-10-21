@@ -33,12 +33,12 @@ public class AccountController : ControllerBase
   }
 
   [HttpGet("confirm-email")]
-  public async Task<IActionResult> ConfirmEmail([FromQuery] string userId, [FromQuery] string token)
+  public async Task<IActionResult> ConfirmEmail([FromQuery] string email, [FromQuery] string token)
   {
-    if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
+    if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(token))
       return BadRequest("Invalid parameters for email confirmation.");
 
-    var result = await _accountService.ConfirmEmailAsync(userId, token);
+    var result = await _accountService.ConfirmEmailAsync(email, token);
     if (result.Succeeded)
     {
       return Ok(new { Message = "Email successfully confirmed." });
@@ -93,13 +93,15 @@ public class AccountController : ControllerBase
   [HttpPost("change-password")]
   public async Task<IActionResult> ChangePassword(ChangePasswordDto changePasswordDto)
   {
-    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (userId == null)
+    var email = User.FindFirstValue(ClaimTypes.Email);
+    if (email == null)
     {
       return Unauthorized();
     }
 
-    var result = await _accountService.ChangePasswordAsync(userId, changePasswordDto);
+    Console.WriteLine($"Change password request for user: {email}");
+
+    var result = await _accountService.ChangePasswordAsync(email, changePasswordDto);
     if (result.Succeeded)
     {
       return Ok(new { Message = "Password changed successfully." });
@@ -111,14 +113,7 @@ public class AccountController : ControllerBase
   [HttpPost("forgot-password")]
   public async Task<IActionResult> ForgotPassword(ForgotPasswordDto forgotPasswordDto)
   {
-    var result = await _accountService.ForgotPasswordAsync(forgotPasswordDto.Email);
-    if (result.Succeeded)
-    {
-      return Ok(new { Message = "If an account with this email exists, a password reset link has been sent." });
-    }
-
-    // To prevent user enumeration, we can return a success message even if the user doesn't exist.
-    // The decision depends on the security policy. For this example, we'll return a generic success message.
+    _ = await _accountService.ForgotPasswordAsync(forgotPasswordDto.Email);
     return Ok(new { Message = "If an account with this email exists, a password reset link has been sent." });
   }
 
@@ -126,7 +121,7 @@ public class AccountController : ControllerBase
   public async Task<IActionResult> ResetPassword(ResetPasswordDto resetPasswordDto)
   {
     var result = await _accountService.ResetPasswordAsync(
-        resetPasswordDto.UserId,
+        resetPasswordDto.Email,
         resetPasswordDto.Token,
         resetPasswordDto.NewPassword);
     if (result.Succeeded)

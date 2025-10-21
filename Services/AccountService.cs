@@ -53,7 +53,7 @@ public class AccountService : IAccountService
     {
       var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
       var encodedToken = HttpUtility.UrlEncode(token);
-      var confirmationLink = $"http://localhost:5177/api/account/confirm-email?userId={user.Id}&token={encodedToken}";
+      var confirmationLink = $"http://localhost:5177/api/account/confirm-email?email={user.Email}&token={encodedToken}";
 
       await _emailService.SendEmailAsync(
           user.Email,
@@ -72,9 +72,8 @@ public class AccountService : IAccountService
       throw new UnauthorizedAccessException("Invalid login credentials.");
     }
 
-    Console.WriteLine("Attempting to sign in user: " + user.Email + " Password SignIn: " + loginDto.Password);
     var result = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, lockoutOnFailure: false);
-    Console.WriteLine("SignIn Result: " + result.Succeeded);
+
     if (result.Succeeded)
     {
       var accessToken = await _tokenService.GenerateJwtTokenAsync(user);
@@ -85,9 +84,9 @@ public class AccountService : IAccountService
     throw new UnauthorizedAccessException("Invalid login attempt.");
   }
 
-  public async Task<IdentityResult> ConfirmEmailAsync(string userId, string token)
+  public async Task<IdentityResult> ConfirmEmailAsync(string email, string token)
   {
-    var user = await _userManager.FindByIdAsync(userId);
+    var user = await _userManager.FindByEmailAsync(email);
     if (user == null)
     {
       return IdentityResult.Failed(new IdentityError { Description = "User not found." });
@@ -96,9 +95,9 @@ public class AccountService : IAccountService
     return await _userManager.ConfirmEmailAsync(user, token);
   }
 
-  public async Task<IdentityResult> ChangePasswordAsync(string userId, ChangePasswordDto changePasswordDto)
+  public async Task<IdentityResult> ChangePasswordAsync(string email, ChangePasswordDto changePasswordDto)
   {
-    var user = await _userManager.FindByIdAsync(userId);
+    var user = await _userManager.FindByEmailAsync(email);
     if (user == null)
     {
       return IdentityResult.Failed(new IdentityError { Description = "User not found." });
@@ -118,7 +117,7 @@ public class AccountService : IAccountService
     var token = await _userManager.GeneratePasswordResetTokenAsync(user);
     var encodedToken = HttpUtility.UrlEncode(token);
 
-    var resetLink = $"http://localhost:5177/reset-password?userId={user.Id}&token={encodedToken}";
+    var resetLink = $"http://localhost:5177/reset-password?email={user.Email}&token={encodedToken}";
 
     await _emailService.SendEmailAsync(
         email,
@@ -128,9 +127,9 @@ public class AccountService : IAccountService
     return IdentityResult.Success;
   }
 
-  public async Task<IdentityResult> ResetPasswordAsync(string userId, string token, string newPassword)
+  public async Task<IdentityResult> ResetPasswordAsync(string email, string token, string newPassword)
   {
-    var user = await _userManager.FindByIdAsync(userId);
+    var user = await _userManager.FindByEmailAsync(email);
     if (user == null)
     {
       return IdentityResult.Failed(new IdentityError { Description = "User not found." });
