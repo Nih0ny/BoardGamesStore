@@ -113,7 +113,7 @@ public class AccountController : ControllerBase
   [HttpPost("forgot-password")]
   public async Task<IActionResult> ForgotPassword(ForgotPasswordDto forgotPasswordDto)
   {
-    _ = await _accountService.ForgotPasswordAsync(forgotPasswordDto.Email);
+    _ = await _accountService.ForgotPasswordAsync(forgotPasswordDto);
     return Ok(new { Message = "If an account with this email exists, a password reset link has been sent." });
   }
 

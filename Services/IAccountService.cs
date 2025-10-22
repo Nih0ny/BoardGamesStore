@@ -9,6 +9,6 @@ public interface IAccountService
   Task<(string AccessToken, string RefreshToken)> LoginUserAsync(LoginDto loginDto);
   Task<IdentityResult> ConfirmEmailAsync(string email, string token);
   Task<IdentityResult> ChangePasswordAsync(string email, ChangePasswordDto changePasswordDto);
-  Task<IdentityResult> ForgotPasswordAsync(string email);
+  Task<IdentityResult> ForgotPasswordAsync(ForgotPasswordDto forgotPasswordDto);
   Task<IdentityResult> ResetPasswordAsync(string email, string token, string newPassword);
 }

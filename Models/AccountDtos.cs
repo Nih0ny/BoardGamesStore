@@ -19,6 +19,10 @@ public class RegisterDto
   [DataType(DataType.Password)]
   [Compare("Password", ErrorMessage = "Passwords do not match.")]
   public required string ConfirmPassword { get; set; }
+
+  [Required]
+  [DataType(DataType.Text)]
+  public required string ClientConfirmationUrl { get; set; }
 }
 
 public class LoginDto
@@ -52,6 +56,10 @@ public class ForgotPasswordDto
   [Required]
   [EmailAddress]
   public required string Email { get; set; }
+
+  [Required]
+  [DataType(DataType.Text)]
+  public required string ClientResetPasswordUrl { get; set; }
 }
 
 public class ResetPasswordDto

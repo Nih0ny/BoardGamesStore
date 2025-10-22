@@ -42,30 +42,30 @@ public class AccountService : IAccountService
 
   public async Task<IdentityResult> RegisterUserAsync(RegisterDto registerDto)
   {
-    var existingUser = await _userManager.FindByEmailAsync(registerDto.Email);
-    if (existingUser != null)
+    var user = await _userManager.FindByEmailAsync(registerDto.Email);
+    if (user != null && await _userManager.IsEmailConfirmedAsync(user))
     {
-      if (!await _userManager.IsEmailConfirmedAsync(existingUser))
-        await _userManager.DeleteAsync(existingUser);
-      else
-        return IdentityResult.Failed(new IdentityError { Description = "Email is already registered." });
-    }
-    var user = new User { UserName = registerDto.Name, Email = registerDto.Email };
-    var result = await _userManager.CreateAsync(user, registerDto.Password);
-
-    if (result.Succeeded)
-    {
-      var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-      var encodedToken = HttpUtility.UrlEncode(token);
-      var confirmationLink = $"http://localhost:5177/api/account/confirm-email?email={user.Email}&token={encodedToken}";
-
-      await _emailService.SendEmailAsync(
-          user.Email,
-          "Confirm your registration",
-          $"Please confirm your registration by clicking the following link: <a href='{confirmationLink}'>link</a>");
+      return IdentityResult.Failed(new IdentityError { Description = "Email is already registered." });
     }
 
-    return result;
+    if (user == null)
+    {
+      user = new User { UserName = registerDto.Name, Email = registerDto.Email };
+      if (!(await _userManager.CreateAsync(user, registerDto.Password)).Succeeded)
+      {
+        return IdentityResult.Failed(new IdentityError { Description = "User registration failed." });
+      }
+    }
+
+    var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+    var encodedToken = HttpUtility.UrlEncode(token);
+    var confirmationLink = $"{registerDto.ClientConfirmationUrl}?email={user.Email}&token={encodedToken}";
+    await _emailService.SendEmailAsync(
+        user.Email!,
+        "Confirm your registration",
+        $"Please confirm your registration by clicking the following link: <a href='{confirmationLink}'>link</a>");
+
+    return IdentityResult.Success;
   }
 
   public async Task<(string AccessToken, string RefreshToken)> LoginUserAsync(LoginDto loginDto)
@@ -110,9 +110,9 @@ public class AccountService : IAccountService
     return await _userManager.ChangePasswordAsync(user, changePasswordDto.CurrentPassword, changePasswordDto.NewPassword);
   }
 
-  public async Task<IdentityResult> ForgotPasswordAsync(string email)
+  public async Task<IdentityResult> ForgotPasswordAsync(ForgotPasswordDto forgotPasswordDto)
   {
-    var user = await _userManager.FindByEmailAsync(email);
+    var user = await _userManager.FindByEmailAsync(forgotPasswordDto.Email);
     if (user == null || !await _userManager.IsEmailConfirmedAsync(user))
     {
       return IdentityResult.Failed(new IdentityError { Description = "User not found or email not confirmed." });
@@ -121,10 +121,10 @@ public class AccountService : IAccountService
     var token = await _userManager.GeneratePasswordResetTokenAsync(user);
     var encodedToken = HttpUtility.UrlEncode(token);
 
-    var resetLink = $"http://localhost:5177/reset-password?email={user.Email}&token={encodedToken}";
+    var resetLink = $"{forgotPasswordDto.ClientResetPasswordUrl}?email={user.Email}&token={encodedToken}";
 
     await _emailService.SendEmailAsync(
-        email,
+        user.Email!,
         "Password Reset",
         $"You can reset your password by clicking the following link: <a href='{resetLink}'>link</a>");
 
