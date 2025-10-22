@@ -47,6 +47,7 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 	{
 		options.Password.RequireDigit = true;
 		options.Password.RequiredLength = 8;
+		options.SignIn.RequireConfirmedAccount = false; // FIXME: видалити пізніше
 	})
 	.AddEntityFrameworkStores<ApplicationDbContext>()
 	.AddDefaultTokenProviders();
