@@ -55,6 +55,10 @@ public class AccountService : IAccountService
       {
         return IdentityResult.Failed(new IdentityError { Description = "User registration failed." });
       }
+      else
+      {
+        await _userManager.AddToRoleAsync(user, "User");
+      }
     }
 
     var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);

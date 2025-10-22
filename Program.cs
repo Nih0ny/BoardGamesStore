@@ -126,6 +126,20 @@ using (var scope = app.Services.CreateScope())
 		var logger = services.GetRequiredService<ILogger<Program>>();
 		logger.LogError(ex, "An error occurred while applying migrations.");
 	}
+
+	var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+	string[] roleNames = ["Admin", "User"];
+	IdentityResult roleResult;
+
+	foreach (var roleName in roleNames)
+	{
+		var roleExist = await roleManager.RoleExistsAsync(roleName);
+		if (!roleExist)
+		{
+			roleResult = await roleManager.CreateAsync(new IdentityRole(roleName));
+		}
+	}
 }
 
 // Configure the HTTP request pipeline.
