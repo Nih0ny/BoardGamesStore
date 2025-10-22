@@ -71,7 +71,7 @@ public class AccountService : IAccountService
   public async Task<(string AccessToken, string RefreshToken)> LoginUserAsync(LoginDto loginDto)
   {
     var user = await _userManager.FindByEmailAsync(loginDto.Email);
-    if (user == null || !await _userManager.IsEmailConfirmedAsync(user))
+    if (user == null || /*!await _userManager.IsEmailConfirmedAsync(user)*/false) // FIXME: тимчасово вимкнено підтвердження email
     {
       throw new UnauthorizedAccessException("Invalid login credentials.");
     }
