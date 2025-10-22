@@ -23,6 +23,9 @@ jobs:
         with:
           dotnet-version: '9.x'
 
+      - name: Create appsettings.json
+        run: echo '${{ secrets.APPSETTINGS_JSON }}' > appsettings.json
+
       - name: Build with dotnet
         run: dotnet build --configuration Release
 
@@ -62,4 +65,5 @@ jobs:
           app-name: 'board-games-store'
           slot-name: 'Production'
           package: .
+
           
