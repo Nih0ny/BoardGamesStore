@@ -1,234 +1,144 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using BoardGamesStore.Data;
+using Microsoft.EntityFrameworkCore;                // for Include in service include expressions
 using BoardGamesStore.Models;
 using BoardGamesStore.Services;
 
 namespace BoardGamesStore.Controllers
 {
-    // public class OrderController : Controller
-    // {
-    //     private readonly ApplicationDbContext _context;
-
-    //     public OrderController(ApplicationDbContext context)
-    //     {
-    //         _context = context;
-    //     }
-
-    //     // GET: Order
-    //     public async Task<IActionResult> Index()
-    //     {
-    //         var applicationDbContext = _context.Orders.Include(o => o.Status).Include(o => o.User);
-    //         return View(await applicationDbContext.ToListAsync());
-    //     }
-
-    //     // GET: Order/Details/5
-    //     public async Task<IActionResult> Details(int? id)
-    //     {
-    //         if (id == null)
-    //         {
-    //             return NotFound();
-    //         }
-
-    //         var order = await _context.Orders
-    //             .Include(o => o.Status)
-    //             .Include(o => o.User)
-    //             .FirstOrDefaultAsync(m => m.Id == id);
-    //         if (order == null)
-    //         {
-    //             return NotFound();
-    //         }
-
-    //         return View(order);
-    //     }
-
-    //     // GET: Order/Create
-    //     public IActionResult Create()
-    //     {
-    //         ViewData["StatusId"] = new SelectList(_context.OrderStatuses, "Id", "Id");
-    //         ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id");
-    //         return View();
-    //     }
-
-    //     // POST: Order/Create
-    //     // To protect from overposting attacks, enable the specific properties you want to bind to.
-    //     // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-    //     [HttpPost]
-    //     [ValidateAntiForgeryToken]
-    //     public async Task<IActionResult> Create([Bind("Id,UserId,StatusId,Total,CreatedAt,UpdatedAt")] Order order)
-    //     {
-    //         if (ModelState.IsValid)
-    //         {
-    //             _context.Add(order);
-    //             await _context.SaveChangesAsync();
-    //             return RedirectToAction(nameof(Index));
-    //         }
-    //         ViewData["StatusId"] = new SelectList(_context.OrderStatuses, "Id", "Id", order.StatusId);
-    //         ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id", order.UserId);
-    //         return View(order);
-    //     }
-
-    //     // GET: Order/Edit/5
-    //     public async Task<IActionResult> Edit(int? id)
-    //     {
-    //         if (id == null)
-    //         {
-    //             return NotFound();
-    //         }
-
-    //         var order = await _context.Orders.FindAsync(id);
-    //         if (order == null)
-    //         {
-    //             return NotFound();
-    //         }
-    //         ViewData["StatusId"] = new SelectList(_context.OrderStatuses, "Id", "Id", order.StatusId);
-    //         ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id", order.UserId);
-    //         return View(order);
-    //     }
-
-    //     // POST: Order/Edit/5
-    //     // To protect from overposting attacks, enable the specific properties you want to bind to.
-    //     // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-    //     [HttpPost]
-    //     [ValidateAntiForgeryToken]
-    //     public async Task<IActionResult> Edit(int id, [Bind("Id,UserId,StatusId,Total,CreatedAt,UpdatedAt")] Order order)
-    //     {
-    //         if (id != order.Id)
-    //         {
-    //             return NotFound();
-    //         }
-
-    //         if (ModelState.IsValid)
-    //         {
-    //             try
-    //             {
-    //                 _context.Update(order);
-    //                 await _context.SaveChangesAsync();
-    //             }
-    //             catch (DbUpdateConcurrencyException)
-    //             {
-    //                 if (!OrderExists(order.Id))
-    //                 {
-    //                     return NotFound();
-    //                 }
-    //                 else
-    //                 {
-    //                     throw;
-    //                 }
-    //             }
-    //             return RedirectToAction(nameof(Index));
-    //         }
-    //         ViewData["StatusId"] = new SelectList(_context.OrderStatuses, "Id", "Id", order.StatusId);
-    //         ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id", order.UserId);
-    //         return View(order);
-    //     }
-
-    //     // GET: Order/Delete/5
-    //     public async Task<IActionResult> Delete(int? id)
-    //     {
-    //         if (id == null)
-    //         {
-    //             return NotFound();
-    //         }
-
-    //         var order = await _context.Orders
-    //             .Include(o => o.Status)
-    //             .Include(o => o.User)
-    //             .FirstOrDefaultAsync(m => m.Id == id);
-    //         if (order == null)
-    //         {
-    //             return NotFound();
-    //         }
-
-    //         return View(order);
-    //     }
-
-    //     // POST: Order/Delete/5
-    //     [HttpPost, ActionName("Delete")]
-    //     [ValidateAntiForgeryToken]
-    //     public async Task<IActionResult> DeleteConfirmed(int id)
-    //     {
-    //         var order = await _context.Orders.FindAsync(id);
-    //         if (order != null)
-    //         {
-    //             _context.Orders.Remove(order);
-    //         }
-
-    //         await _context.SaveChangesAsync();
-    //         return RedirectToAction(nameof(Index));
-    //     }
-
-    //     private bool OrderExists(int id)
-    //     {
-    //         return _context.Orders.Any(e => e.Id == id);
-    //     }
-    // }
-
+    [ApiController]
     [Route("api/[controller]")]
-    public class OrderController : Controller
+    public class OrderController : ControllerBase
     {
-        private readonly IGenericService<Order> _orderService;
-        private readonly ApplicationDbContext _context;
+        private readonly IOrderService _orders;
+        private readonly IOrderItemService _orderItems;
 
-        public OrderController(IGenericService<Order> orderService, ApplicationDbContext context)
+        public OrderController(IOrderService orders, IOrderItemService orderItems)
         {
-            _orderService = orderService;
-            _context = context;
+            _orders = orders;
+            _orderItems = orderItems;
         }
 
-        // GET /order
+        // GET: api/order
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var orders = await _orderService.GetAllAsync(q => q
+            var list = await _orders.GetAllAsync(q => q
                 .Include(o => o.Status)
                 .Include(o => o.User)
                 .Include(o => o.OrderItems));
-
-            return Ok(orders);
+            return Ok(list);
         }
 
-        // GET api/orders/5
-        [HttpGet("{id}")]
+        // GET: api/order/5
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var order = await _context.Orders
+            var order = await _orders.GetByIdAsync(id, q => q
                 .Include(o => o.Status)
                 .Include(o => o.User)
-                .Include(o => o.OrderItems)
-                .FirstOrDefaultAsync(o => o.Id == id);
-
-            if (order == null) return NotFound();
-            return Ok(order);
+                .Include(o => o.OrderItems));
+            return order is null ? NotFound() : Ok(order);
         }
 
-        // POST api/orders
+        // POST: api/order   (Admin only)
+        [Authorize(Roles = "Admin")]
         [HttpPost]
-        public async Task<IActionResult> Create(Order order)
+        public async Task<IActionResult> Create([FromBody] Order dto)
         {
-            await _orderService.AddAsync(order);
-            return Ok(order);
+            // expects dto.UserId (string), dto.StatusId (int), dto.Total (decimal)
+            var created = await _orders.CreateAsync(dto.UserId, dto.StatusId, dto.Total);
+            return Ok(created);
         }
 
-        // PUT api/orders/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, Order order)
+        // PUT: api/order/5   (Admin only)
+        [Authorize(Roles = "Admin")]
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Update(int id, [FromBody] Order dto)
         {
-            if (id != order.Id) return BadRequest();
-            await _orderService.UpdateAsync(order);
-            return Ok(order);
+            if (id != dto.Id) return BadRequest("Mismatched id.");
+            var ok = await _orders.UpdateAsync(dto);
+            return ok ? Ok(dto) : NotFound();
         }
 
-        // DELETE api/orders/5
-        [HttpDelete("{id}")]
+        // DELETE: api/order/5   (Admin only)
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await _orderService.DeleteAsync(id);
+            var ok = await _orders.DeleteAsync(id);
+            return ok ? NoContent() : NotFound();
+        }
+
+        // PATCH: api/order/5/status   (Admin only)  body: { "statusId": 2 }
+        public record ChangeStatusDto(int StatusId);
+
+        [Authorize(Roles = "Admin")]
+        [HttpPatch("{id:int}/status")]
+        public async Task<IActionResult> ChangeStatus(int id, [FromBody] ChangeStatusDto body)
+        {
+            var ok = await _orders.ChangeStatusAsync(id, body.StatusId);
+            return ok ? NoContent() : NotFound();
+        }
+
+        // POST: api/order/5/recalculate (recomputes Total from items)
+        [HttpPost("{id:int}/recalculate")]
+        public async Task<IActionResult> Recalculate(int id)
+        {
+            var total = await _orders.RecalculateTotalAsync(id, save: true);
+            return Ok(new { OrderId = id, Total = total });
+        }
+
+        // ===== Items on an order =====
+
+        // GET: api/order/5/items
+        [HttpGet("{orderId:int}/items")]
+        public async Task<IActionResult> ListItems(int orderId)
+        {
+            var items = await _orderItems.GetByOrderAsync(orderId);
+            return Ok(items);
+        }
+
+        // POST: api/order/5/items   (Admin only)
+        // body: { "productId": 1, "quantity": 2, "price": 99.00 }
+        public record AddItemDto(int ProductId, int Quantity, decimal Price);
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost("{orderId:int}/items")]
+        public async Task<IActionResult> AddItem(int orderId, [FromBody] AddItemDto body)
+        {
+            var item = await _orderItems.AddOrUpdateAsync(orderId, body.ProductId, body.Quantity, body.Price);
+            return Ok(item);
+        }
+
+        // PUT: api/order/5/items/12   (Admin only)  body: { "quantity": 3 }
+        public record UpdateQtyDto(int Quantity);
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut("{orderId:int}/items/{orderItemId:int}")]
+        public async Task<IActionResult> UpdateItem(int orderId, int orderItemId, [FromBody] UpdateQtyDto body)
+        {
+            var ok = await _orderItems.UpdateQuantityAsync(orderItemId, body.Quantity);
+            return ok ? NoContent() : NotFound();
+        }
+
+        // DELETE: api/order/5/items/12   (Admin only)
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("{orderId:int}/items/{orderItemId:int}")]
+        public async Task<IActionResult> RemoveItem(int orderId, int orderItemId)
+        {
+            var ok = await _orderItems.RemoveAsync(orderItemId);
+            return ok ? NoContent() : NotFound();
+        }
+
+        // POST: api/order/5/items/clear   (Admin only)
+        [Authorize(Roles = "Admin")]
+        [HttpPost("{orderId:int}/items/clear")]
+        public async Task<IActionResult> ClearItems(int orderId)
+        {
+            await _orderItems.ClearAsync(orderId);
             return NoContent();
         }
     }

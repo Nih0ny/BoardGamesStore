@@ -1,159 +1,115 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using BoardGamesStore.Data;
 using BoardGamesStore.Models;
+using BoardGamesStore.Services; // IProductService
+using Microsoft.EntityFrameworkCore;       // only if you keep any EF helpers (not strictly needed)
 
 namespace BoardGamesStore.Controllers
 {
     public class ProductController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IProductService _products;
 
-        public ProductController(ApplicationDbContext context)
+        public ProductController(IProductService products)
         {
-            _context = context;
+            _products = products;
         }
 
         // GET: Product
+        [HttpGet]
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Products.ToListAsync());
+            var list = await _products.GetAllAsync();
+            return View(list);
         }
 
         // GET: Product/Details/5
+        [HttpGet]
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id is null) return NotFound();
 
-            var product = await _context.Products
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (product == null)
-            {
-                return NotFound();
-            }
+            var product = await _products.GetByIdAsync(id.Value);
+            if (product is null) return NotFound();
 
             return View(product);
         }
 
-        // GET: Product/Create
+        // GET: Product/Create  (Admin only)
+        [Authorize(Roles = "Admin")]
+        [HttpGet]
         public IActionResult Create()
         {
             return View();
         }
 
-        // POST: Product/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        // POST: Product/Create  (Admin only)
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,Description,Price,Stock,Category,ImageUrl,BonusRate,MaxBonusPaymentPercent,CreatedAt,UpdatedAt")] Product product)
+        public async Task<IActionResult> Create([Bind("Name,Description,Price,Stock,Category,ImageUrl,BonusRate,MaxBonusPaymentPercent")] Product product)
         {
-            if (ModelState.IsValid)
-            {
-                product.CreatedAt = DateTime.UtcNow;
-                product.UpdatedAt = DateTime.UtcNow;
-                _context.Add(product);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(product);
+            if (!ModelState.IsValid) return View(product);
+
+            await _products.CreateAsync(product);
+            return RedirectToAction(nameof(Index));
         }
 
-        // GET: Product/Edit/5
+        // GET: Product/Edit/5  (Admin only)
+        [Authorize(Roles = "Admin")]
+        [HttpGet]
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id is null) return NotFound();
 
-            var product = await _context.Products.FindAsync(id);
-            if (product == null)
-            {
-                return NotFound();
-            }
+            var product = await _products.GetByIdAsync(id.Value);
+            if (product is null) return NotFound();
+
             return View(product);
         }
 
-        // POST: Product/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        // POST: Product/Edit/5  (Admin only)
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Price,Stock,Category,ImageUrl,BonusRate,MaxBonusPaymentPercent,CreatedAt,UpdatedAt")] Product product)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Price,Stock,Category,ImageUrl,BonusRate,MaxBonusPaymentPercent,CreatedAt")] Product product)
         {
-            if (id != product.Id)
-            {
-                return NotFound();
-            }
+            if (id != product.Id) return NotFound();
+            if (!ModelState.IsValid) return View(product);
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(product);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ProductExists(product.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(product);
+            var ok = await _products.UpdateAsync(product);
+            if (!ok) return NotFound();
+
+            return RedirectToAction(nameof(Index));
         }
 
-        // GET: Product/Delete/5
+        // GET: Product/Delete/5  (Admin only)
+        [Authorize(Roles = "Admin")]
+        [HttpGet]
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id is null) return NotFound();
 
-            var product = await _context.Products
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (product == null)
-            {
-                return NotFound();
-            }
+            var product = await _products.GetByIdAsync(id.Value);
+            if (product is null) return NotFound();
 
             return View(product);
         }
 
-        // POST: Product/Delete/5
+        // POST: Product/Delete/5  (Admin only)
+        [Authorize(Roles = "Admin")]
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var product = await _context.Products.FindAsync(id);
-            if (product != null)
-            {
-                _context.Products.Remove(product);
-            }
-
-            await _context.SaveChangesAsync();
+            await _products.DeleteAsync(id);
             return RedirectToAction(nameof(Index));
         }
 
-        private bool ProductExists(int id)
-        {
-            return _context.Products.Any(e => e.Id == id);
-        }
+        // If you still need this helper:
+        private Task<bool> ProductExists(int id) => _products.ExistsAsync(id);
     }
 }
