@@ -51,7 +51,7 @@ namespace BoardGamesStore.Controllers
         // // MVC View (GET):
         // public async Task<IActionResult> Edit(int? id) => View(report);
 
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         [HttpPut]
         [Route("{id:int}/update")]
         public async Task<IActionResult> Update(int id, [FromBody] ProductReport dto)
@@ -65,7 +65,7 @@ namespace BoardGamesStore.Controllers
         // public async Task<IActionResult> Delete(int? id) => View(report);
         // [HttpPost, ActionName("Delete")] public async Task<IActionResult> DeleteConfirmed(int id) ...
 
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         [HttpDelete]
         [Route("{id:int}/delete")]
         public async Task<IActionResult> Delete(int id)
@@ -74,7 +74,7 @@ namespace BoardGamesStore.Controllers
             return ok ? NoContent() : NotFound();
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         [HttpPatch]
         [Route("{id:int}/status")]
         public async Task<IActionResult> ChangeStatus(int id, [FromBody] ChangeStatusDto body)
