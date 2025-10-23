@@ -1,137 +1,95 @@
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using BoardGamesStore.Models;
 using BoardGamesStore.Services;
-using BoardGamesStore.Data;               // only for the SelectList (users dropdown)
-using Microsoft.EntityFrameworkCore;     // only for users dropdown
-using Microsoft.AspNetCore.Authorization;
 
 namespace BoardGamesStore.Controllers
 {
-    public class CartController : Controller
+    [ApiController]
+    [Route("api/[controller]")]
+    public class CartController : ControllerBase
     {
         private readonly ICartService _carts;
         private readonly ICartItemService _items;
-        private readonly ApplicationDbContext _db; // for Users dropdown in Create/Edit
 
-        public CartController(ICartService carts, ICartItemService items, ApplicationDbContext db)
+        public CartController(ICartService carts, ICartItemService items)
         {
             _carts = carts;
             _items = items;
-            _db = db;
         }
 
-        // GET: /Cart
-        public async Task<IActionResult> Index()
+        // // MVC View:
+        // public async Task<IActionResult> Index() => View(await _carts.GetAllAsync());
+
+        [HttpGet]
+        [Route("all")]
+        public async Task<IActionResult> GetAll()
         {
             var list = await _carts.GetAllAsync();
-            return View(list);
+            return Ok(list);
         }
 
-        // GET: /Cart/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id is null) return NotFound();
+        // // MVC View:
+        // public async Task<IActionResult> Details(int? id) => View(cart);
 
-            var cart = await _carts.GetByIdAsync(id.Value);
+        [HttpGet]
+        [Route("{id:int}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var cart = await _carts.GetByIdAsync(id);
             if (cart is null) return NotFound();
-
-            // Load items for this cart
-            ViewData["Items"] = await _items.GetItemsAsync(cart.Id);
-            return View(cart);
+            var items = await _items.GetItemsAsync(id);
+            return Ok(new { cart, items });
         }
 
-        // GET: /Cart/Create
-        // (If you want this for Admin only, add: [Authorize(Roles = "Admin")])
-        public async Task<IActionResult> Create()
-        {
-            // Identity UserId is a string
-            var users = await _db.Users.AsNoTracking().ToListAsync();
-            ViewData["UserId"] = new SelectList(users, "Id", "Id");
-            return View();
-        }
+        // // MVC View (GET):
+        // public IActionResult Create() => View();
 
-        // POST: /Cart/Create
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("UserId")] Cart cart)
+        [Route("create")]
+        public async Task<IActionResult> Create([FromBody] CartCreateDto body)
         {
-            if (!ModelState.IsValid)
-            {
-                var users = await _db.Users.AsNoTracking().ToListAsync();
-                ViewData["UserId"] = new SelectList(users, "Id", "Id", cart.UserId);
-                return View(cart);
-            }
-
-            // CartService handles timestamps & required navs
-            var created = await _carts.CreateAsync(cart.UserId);
-            return RedirectToAction(nameof(Details), new { id = created.Id });
+            // body: { "userId": "<string>" }
+            var created = await _carts.CreateAsync(body.UserId);
+            return Ok(created);
         }
 
-        // GET: /Cart/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public record CartCreateDto(string UserId);
+
+        // // MVC View (GET):
+        // public async Task<IActionResult> Edit(int? id) => View(cart);
+
+        [HttpPut]
+        [Route("{id:int}/update")]
+        public async Task<IActionResult> Update(int id, [FromBody] Cart dto)
         {
-            if (id is null) return NotFound();
-
-            var cart = await _carts.GetByIdAsync(id.Value);
-            if (cart is null) return NotFound();
-
-            var users = await _db.Users.AsNoTracking().ToListAsync();
-            ViewData["UserId"] = new SelectList(users, "Id", "Id", cart.UserId);
-            return View(cart);
+            if (id != dto.Id) return BadRequest("Mismatched id.");
+            var ok = await _carts.UpdateAsync(dto);
+            return ok ? Ok(dto) : NotFound();
         }
 
-        // POST: /Cart/Edit/5
+        // ==== Cart deletion disabled by requirement ====
+        // [HttpDelete("{id:int}/delete")] -> intentionally omitted
+
+        // PAY: compute total, (TODO: call payment), clear items
+        [Authorize]
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,UserId")] Cart cart)
-        {
-            if (id != cart.Id) return NotFound();
-            if (!ModelState.IsValid)
-            {
-                var users = await _db.Users.AsNoTracking().ToListAsync();
-                ViewData["UserId"] = new SelectList(users, "Id", "Id", cart.UserId);
-                return View(cart);
-            }
-
-            var ok = await _carts.UpdateAsync(cart);
-            if (!ok) return NotFound();
-
-            return RedirectToAction(nameof(Details), new { id });
-        }
-
-        [Authorize] // user must be logged in
-        [HttpPost("Cart/Pay/{cartId:int}")]
-        [ValidateAntiForgeryToken]
+        [Route("pay/{cartId:int}")]
         public async Task<IActionResult> Pay(int cartId)
         {
             var cart = await _carts.GetByIdAsync(cartId);
-            if (cart == null)
-                return NotFound();
+            if (cart is null) return NotFound();
 
             var items = await _items.GetItemsAsync(cartId);
-            if (items == null || items.Count == 0)
-                return BadRequest("Cart is empty.");
+            if (items.Count == 0) return BadRequest("Cart is empty.");
 
-            // Compute total
             var total = items.Sum(i => i.Product.Price * i.Quantity);
 
-            // TODO: plug in payment gateway here
-            
+            // TODO: integrate payment gateway here
+            // if (!paymentSuccess) return BadRequest("Payment failed.");
+
             await _items.ClearAsync(cartId);
-
-            TempData["Message"] = $"Payment successful. Total paid: {total:C2}";
-            return RedirectToAction(nameof(Details), new { id = cartId });
+            return Ok(new { cartId, total, message = "Payment simulated and cart cleared." });
         }
-
-        // ==== NO CART DELETE ====
-
-        [NonAction]
-        public Task<IActionResult> Delete(int? id) => Task.FromResult<IActionResult>(BadRequest("Cart deletion is disabled."));
-        [NonAction]
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public Task<IActionResult> DeleteConfirmed(int id) => Task.FromResult<IActionResult>(BadRequest("Cart deletion is disabled."));
     }
 }

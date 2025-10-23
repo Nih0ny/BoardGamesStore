@@ -1,115 +1,77 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using BoardGamesStore.Models;
-using BoardGamesStore.Services; // IProductService
-using Microsoft.EntityFrameworkCore;       // only if you keep any EF helpers (not strictly needed)
+using BoardGamesStore.Services;
 
 namespace BoardGamesStore.Controllers
 {
-    public class ProductController : Controller
+    [ApiController]
+    [Route("api/[controller]")]
+    public class ProductController : ControllerBase
     {
         private readonly IProductService _products;
+        public ProductController(IProductService products) => _products = products;
 
-        public ProductController(IProductService products)
-        {
-            _products = products;
-        }
+        // // MVC View:
+        // public async Task<IActionResult> Index() => View(await _products.GetAllAsync());
 
-        // GET: Product
         [HttpGet]
-        public async Task<IActionResult> Index()
+        [Route("all")]
+        public async Task<IActionResult> GetAll()
         {
             var list = await _products.GetAllAsync();
-            return View(list);
+            return Ok(list);
         }
 
-        // GET: Product/Details/5
+        // // MVC View:
+        // public async Task<IActionResult> Details(int? id) { ... return View(product); }
+
         [HttpGet]
-        public async Task<IActionResult> Details(int? id)
+        [Route("{id:int}")]
+        public async Task<IActionResult> GetById(int id)
         {
-            if (id is null) return NotFound();
-
-            var product = await _products.GetByIdAsync(id.Value);
-            if (product is null) return NotFound();
-
-            return View(product);
+            var p = await _products.GetByIdAsync(id);
+            return p is null ? NotFound() : Ok(p);
         }
 
-        // GET: Product/Create  (Admin only)
-        [Authorize(Roles = "Admin")]
-        [HttpGet]
-        public IActionResult Create()
-        {
-            return View();
-        }
+        // // MVC View (GET):
+        // public IActionResult Create() => View();
 
-        // POST: Product/Create  (Admin only)
-        [Authorize(Roles = "Admin")]
+        //
+        [Authorize]
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name,Description,Price,Stock,Category,ImageUrl,BonusRate,MaxBonusPaymentPercent")] Product product)
+        [Route("create")]
+        public async Task<IActionResult> Create([FromBody] Product dto)
         {
-            if (!ModelState.IsValid) return View(product);
-
-            await _products.CreateAsync(product);
-            return RedirectToAction(nameof(Index));
+            var created = await _products.CreateAsync(dto);
+            return Ok(created);
         }
 
-        // GET: Product/Edit/5  (Admin only)
-        [Authorize(Roles = "Admin")]
-        [HttpGet]
-        public async Task<IActionResult> Edit(int? id)
+        // // MVC View (GET):
+        // public async Task<IActionResult> Edit(int? id) => View(product);
+
+        //
+        [Authorize]
+        [HttpPut]
+        [Route("{id:int}/update")]
+        public async Task<IActionResult> Update(int id, [FromBody] Product dto)
         {
-            if (id is null) return NotFound();
-
-            var product = await _products.GetByIdAsync(id.Value);
-            if (product is null) return NotFound();
-
-            return View(product);
+            if (id != dto.Id) return BadRequest("Mismatched id.");
+            var ok = await _products.UpdateAsync(dto);
+            return ok ? Ok(dto) : NotFound();
         }
 
-        // POST: Product/Edit/5  (Admin only)
-        [Authorize(Roles = "Admin")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Price,Stock,Category,ImageUrl,BonusRate,MaxBonusPaymentPercent,CreatedAt")] Product product)
+        // // MVC View (GET+POST):
+        // public async Task<IActionResult> Delete(int? id) => View(product);
+        // [HttpPost, ActionName("Delete")] public async Task<IActionResult> DeleteConfirmed(int id) ...
+        //
+        [Authorize]
+        [HttpDelete]
+        [Route("{id:int}/delete")]
+        public async Task<IActionResult> Delete(int id)
         {
-            if (id != product.Id) return NotFound();
-            if (!ModelState.IsValid) return View(product);
-
-            var ok = await _products.UpdateAsync(product);
-            if (!ok) return NotFound();
-
-            return RedirectToAction(nameof(Index));
+            var ok = await _products.DeleteAsync(id);
+            return ok ? NoContent() : NotFound();
         }
-
-        // GET: Product/Delete/5  (Admin only)
-        [Authorize(Roles = "Admin")]
-        [HttpGet]
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id is null) return NotFound();
-
-            var product = await _products.GetByIdAsync(id.Value);
-            if (product is null) return NotFound();
-
-            return View(product);
-        }
-
-        // POST: Product/Delete/5  (Admin only)
-        [Authorize(Roles = "Admin")]
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            await _products.DeleteAsync(id);
-            return RedirectToAction(nameof(Index));
-        }
-
-        // If you still need this helper:
-        private Task<bool> ProductExists(int id) => _products.ExistsAsync(id);
     }
 }

@@ -1,57 +1,69 @@
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using BoardGamesStore.Services;
 
 namespace BoardGamesStore.Controllers
 {
-    [Route("Cart/{cartId:int}/Items")]
-    public class CartItemController : Controller
+    [ApiController]
+    [Route("api/cart/{cartId:int}/items")]
+    public class CartItemController : ControllerBase
     {
         private readonly ICartItemService _items;
+        public CartItemController(ICartItemService items) => _items = items;
 
-        public CartItemController(ICartItemService items)
+        // // MVC View:
+        // public async Task<IActionResult> Index() => View(...)
+
+        [HttpGet]
+        [Route("")]
+        public async Task<IActionResult> List(int cartId)
         {
-            _items = items;
+            var list = await _items.GetItemsAsync(cartId);
+            return Ok(list);
         }
 
-        // POST: /Cart/{cartId}/Items/Add
-        [HttpPost("Add")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Add(int cartId, int productId, int quantity = 1)
+        // // MVC View (GET):
+        // public IActionResult Create() => View();
+
+        [HttpPost]
+        [Route("add")]
+        public async Task<IActionResult> Add(int cartId, [FromBody] AddDto body)
         {
-            await _items.AddItemAsync(cartId, productId, quantity);
-            return RedirectToAction("Details", "Cart", new { id = cartId });
+            // body: { "productId": 1, "quantity": 2 }
+            var item = await _items.AddItemAsync(cartId, body.ProductId, body.Quantity);
+            return Ok(item);
         }
+        public record AddDto(int ProductId, int Quantity);
 
-        // POST: /Cart/{cartId}/Items/{cartItemId}/Update
-        [HttpPost("{cartItemId:int}/Update")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Update(int cartId, int cartItemId, int quantity)
+        // // MVC View (GET):
+        // public async Task<IActionResult> Edit(int? id) => View(cartItem);
+
+        [HttpPut]
+        [Route("{cartItemId:int}/update")]
+        public async Task<IActionResult> Update(int cartId, int cartItemId, [FromBody] UpdateDto body)
         {
-            var ok = await _items.UpdateQuantityAsync(cartItemId, quantity);
-            if (!ok) return NotFound();
-
-            return RedirectToAction("Details", "Cart", new { id = cartId });
+            var ok = await _items.UpdateQuantityAsync(cartItemId, body.Quantity);
+            return ok ? NoContent() : NotFound();
         }
+        public record UpdateDto(int Quantity);
 
-        // POST: /Cart/{cartId}/Items/{cartItemId}/Remove
-        [HttpPost("{cartItemId:int}/Remove")]
-        [ValidateAntiForgeryToken]
+        // // MVC View:
+        // public async Task<IActionResult> Delete(int? id) => View(cartItem);
+
+        [HttpDelete]
+        [Route("{cartItemId:int}/delete")]
         public async Task<IActionResult> Remove(int cartId, int cartItemId)
         {
             var ok = await _items.RemoveItemAsync(cartItemId);
-            if (!ok) return NotFound();
-
-            return RedirectToAction("Details", "Cart", new { id = cartId });
+            return ok ? NoContent() : NotFound();
         }
 
-        // POST: /Cart/{cartId}/Items/Clear
-        [HttpPost("Clear")]
-        [ValidateAntiForgeryToken]
+        [HttpPost]
+        [Route("clear")]
         public async Task<IActionResult> Clear(int cartId)
         {
             await _items.ClearAsync(cartId);
-            return RedirectToAction("Details", "Cart", new { id = cartId });
+            return NoContent();
         }
     }
 }

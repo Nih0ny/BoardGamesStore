@@ -1,170 +1,87 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using BoardGamesStore.Data;
+using Microsoft.EntityFrameworkCore; // if you pass include expr
+using BoardGamesStore.Services;
 using BoardGamesStore.Models;
 
 namespace BoardGamesStore.Controllers
 {
-    public class ProductReportController : Controller
+    [ApiController]
+    [Route("api/[controller]")]
+    public class ProductReportController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IProductReportService _reports;
+        public ProductReportController(IProductReportService reports) => _reports = reports;
 
-        public ProductReportController(ApplicationDbContext context)
+        // // MVC View:
+        // public async Task<IActionResult> Index() => View(...);
+
+        [HttpGet]
+        [Route("all")]
+        public async Task<IActionResult> GetAll()
         {
-            _context = context;
+            var list = await _reports.GetAllAsync(q => q.Include(r => r.Product).Include(r => r.User));
+            return Ok(list);
         }
 
-        // GET: ProductReport
-        public async Task<IActionResult> Index()
+        // // MVC View:
+        // public async Task<IActionResult> Details(int? id) => View(productReport);
+
+        [HttpGet]
+        [Route("{id:int}")]
+        public async Task<IActionResult> GetById(int id)
         {
-            var applicationDbContext = _context.ProductReports.Include(p => p.Product).Include(p => p.User);
-            return View(await applicationDbContext.ToListAsync());
+            var r = await _reports.GetByIdAsync(id, q => q.Include(x => x.Product).Include(x => x.User));
+            return r is null ? NotFound() : Ok(r);
         }
 
-        // GET: ProductReport/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
+        // // MVC View (GET):
+        // public IActionResult Create() => View();
 
-            var productReport = await _context.ProductReports
-                .Include(p => p.Product)
-                .Include(p => p.User)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (productReport == null)
-            {
-                return NotFound();
-            }
-
-            return View(productReport);
-        }
-
-        // GET: ProductReport/Create
-        public IActionResult Create()
-        {
-            ViewData["ProductId"] = new SelectList(_context.Products, "Id", "Id");
-            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id");
-            return View();
-        }
-
-        // POST: ProductReport/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,UserId,ProductId,Reason,Status,CreatedAt")] ProductReport productReport)
+        [Route("create")]
+        public async Task<IActionResult> Create([FromBody] CreateDto body)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(productReport);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["ProductId"] = new SelectList(_context.Products, "Id", "Id", productReport.ProductId);
-            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id", productReport.UserId);
-            return View(productReport);
+            // body: { "userId":"...", "productId":1, "reason":"...", "status":"new" }
+            var created = await _reports.CreateAsync(body.UserId, body.ProductId, body.Reason ?? "", body.Status ?? "new");
+            return Ok(created);
+        }
+        public record CreateDto(string UserId, int ProductId, string? Reason, string? Status);
+
+        // // MVC View (GET):
+        // public async Task<IActionResult> Edit(int? id) => View(report);
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut]
+        [Route("{id:int}/update")]
+        public async Task<IActionResult> Update(int id, [FromBody] ProductReport dto)
+        {
+            if (id != dto.Id) return BadRequest("Mismatched id.");
+            var ok = await _reports.UpdateAsync(dto);
+            return ok ? Ok(dto) : NotFound();
         }
 
-        // GET: ProductReport/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
+        // // MVC View (GET+POST):
+        // public async Task<IActionResult> Delete(int? id) => View(report);
+        // [HttpPost, ActionName("Delete")] public async Task<IActionResult> DeleteConfirmed(int id) ...
 
-            var productReport = await _context.ProductReports.FindAsync(id);
-            if (productReport == null)
-            {
-                return NotFound();
-            }
-            ViewData["ProductId"] = new SelectList(_context.Products, "Id", "Id", productReport.ProductId);
-            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id", productReport.UserId);
-            return View(productReport);
+        [Authorize(Roles = "Admin")]
+        [HttpDelete]
+        [Route("{id:int}/delete")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var ok = await _reports.DeleteAsync(id);
+            return ok ? NoContent() : NotFound();
         }
 
-        // POST: ProductReport/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,UserId,ProductId,Reason,Status,CreatedAt")] ProductReport productReport)
+        [Authorize(Roles = "Admin")]
+        [HttpPatch]
+        [Route("{id:int}/status")]
+        public async Task<IActionResult> ChangeStatus(int id, [FromBody] ChangeStatusDto body)
         {
-            if (id != productReport.Id)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(productReport);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ProductReportExists(productReport.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["ProductId"] = new SelectList(_context.Products, "Id", "Id", productReport.ProductId);
-            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id", productReport.UserId);
-            return View(productReport);
+            var ok = await _reports.ChangeStatusAsync(id, body.Status);
+            return ok ? NoContent() : NotFound();
         }
-
-        // GET: ProductReport/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var productReport = await _context.ProductReports
-                .Include(p => p.Product)
-                .Include(p => p.User)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (productReport == null)
-            {
-                return NotFound();
-            }
-
-            return View(productReport);
-        }
-
-        // POST: ProductReport/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var productReport = await _context.ProductReports.FindAsync(id);
-            if (productReport != null)
-            {
-                _context.ProductReports.Remove(productReport);
-            }
-
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-
-        private bool ProductReportExists(int id)
-        {
-            return _context.ProductReports.Any(e => e.Id == id);
-        }
+        public record ChangeStatusDto(string Status);
     }
 }
