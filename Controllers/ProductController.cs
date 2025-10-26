@@ -30,7 +30,7 @@ namespace BoardGamesStore.Controllers
             return p is null ? NotFound() : Ok(p);
         }
 
-        [Authorize]
+        //[Authorize]
         [HttpPost("create")]
         public async Task<IActionResult> Create([FromBody] Product dto)
         {
@@ -39,7 +39,7 @@ namespace BoardGamesStore.Controllers
             return Ok(created);
         }
 
-        [Authorize]
+        //[Authorize]
         [HttpPut("{id:int}/update")]
         public async Task<IActionResult> Update(int id, [FromBody] Product dto)
         {
@@ -49,7 +49,7 @@ namespace BoardGamesStore.Controllers
             return ok ? Ok(dto) : NotFound();
         }
 
-        [Authorize]
+        //[Authorize]
         [HttpDelete("{id:int}/delete")]
         public async Task<IActionResult> Delete(int id)
         {
