@@ -3,6 +3,21 @@ using Microsoft.EntityFrameworkCore.Query;
 
 namespace BoardGamesStore.Services
 {
+    public record ProductQuery(
+        string? Text,
+        string? Category,
+        decimal? MinPrice,
+        decimal? MaxPrice,
+        bool InStockOnly,
+        string? Sort,         // "price_asc","price_desc","newest","name","bonus_desc"
+        int Skip,
+        int Take
+    );
+
+    public record PagedResult<T>(IReadOnlyList<T> Items, int Total);
+
+    public record CategoryCount(string Category, int Count);
+
     public interface IProductService
     {
         Task<List<Product>> GetAllAsync(
@@ -22,5 +37,13 @@ namespace BoardGamesStore.Services
         Task<bool> AdjustStockAsync(int productId, int delta, CancellationToken ct = default);
         Task<bool> SetImageUrlAsync(int productId, string? imageUrl, CancellationToken ct = default);
         Task<bool> ExistsAsync(int id, CancellationToken ct = default);
+
+        // New query-style endpoints
+        Task<PagedResult<Product>> SearchAsync(ProductQuery query, CancellationToken ct = default);
+        Task<List<Product>> GetByIdsAsync(IEnumerable<int> ids, CancellationToken ct = default);
+        Task<List<Product>> GetSimilarAsync(int productId, int limit, CancellationToken ct = default);
+        Task<List<Product>> GetNewestAsync(int limit, string? category = null, CancellationToken ct = default);
+        Task<List<CategoryCount>> GetCategoriesWithCountsAsync(CancellationToken ct = default);
+        Task<(decimal min, decimal max, int count)> GetPriceStatsAsync(string? category = null, CancellationToken ct = default);
     }
 }

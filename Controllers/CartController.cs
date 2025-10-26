@@ -21,6 +21,7 @@ namespace BoardGamesStore.Controllers
         // // MVC View:
         // public async Task<IActionResult> Index() => View(await _carts.GetAllAsync());
 
+        [Authorize]
         [HttpGet]
         [Route("all")]
         public async Task<IActionResult> GetAll()
@@ -32,6 +33,7 @@ namespace BoardGamesStore.Controllers
         // // MVC View:
         // public async Task<IActionResult> Details(int? id) => View(cart);
 
+        [Authorize]
         [HttpGet]
         [Route("{id:int}")]
         public async Task<IActionResult> GetById(int id)
@@ -45,6 +47,7 @@ namespace BoardGamesStore.Controllers
         // // MVC View (GET):
         // public IActionResult Create() => View();
 
+        [Authorize]
         [HttpPost]
         [Route("create")]
         public async Task<IActionResult> Create([FromBody] CartCreateDto body)
@@ -59,6 +62,7 @@ namespace BoardGamesStore.Controllers
         // // MVC View (GET):
         // public async Task<IActionResult> Edit(int? id) => View(cart);
 
+        [Authorize]
         [HttpPut]
         [Route("{id:int}/update")]
         public async Task<IActionResult> Update(int id, [FromBody] Cart dto)
@@ -68,8 +72,6 @@ namespace BoardGamesStore.Controllers
             return ok ? Ok(dto) : NotFound();
         }
 
-        // ==== Cart deletion disabled by requirement ====
-        // [HttpDelete("{id:int}/delete")] -> intentionally omitted
 
         // PAY: compute total, (TODO: call payment), clear items
         [Authorize]

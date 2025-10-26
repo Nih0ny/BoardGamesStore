@@ -19,6 +19,7 @@ namespace BoardGamesStore.Controllers
             _orderItems = orderItems;
         }
 
+        [Authorize]
         [HttpGet]
         [Route("all")]
         public async Task<IActionResult> GetAll()
@@ -29,7 +30,8 @@ namespace BoardGamesStore.Controllers
                 .Include(o => o.OrderItems));
             return Ok(list);
         }
-
+        
+        [Authorize]
         [HttpGet]
         [Route("{id:int}")]
         public async Task<IActionResult> GetById(int id)
@@ -41,7 +43,7 @@ namespace BoardGamesStore.Controllers
             return order is null ? NotFound() : Ok(order);
         }
 
-        [Authorize]
+        [Authorize] //TODO: Admin
         [HttpPost]
         [Route("create")]
         public async Task<IActionResult> Create([FromBody] Order dto)
@@ -50,7 +52,7 @@ namespace BoardGamesStore.Controllers
             return Ok(created);
         }
 
-        [Authorize]
+        [Authorize] //TODO: Admin
         [HttpPut]
         [Route("{id:int}/update")]
         public async Task<IActionResult> Update(int id, [FromBody] Order dto)
@@ -60,7 +62,7 @@ namespace BoardGamesStore.Controllers
             return ok ? Ok(dto) : NotFound();
         }
 
-        [Authorize]
+        [Authorize] //TODO: Admin
         [HttpDelete]
         [Route("{id:int}/delete")]
         public async Task<IActionResult> Delete(int id)
@@ -69,7 +71,7 @@ namespace BoardGamesStore.Controllers
             return ok ? NoContent() : NotFound();
         }
 
-        [Authorize]
+        [Authorize] //TODO: Admin
         [HttpPatch]
         [Route("{id:int}/status")]
         public async Task<IActionResult> ChangeStatus(int id, [FromBody] ChangeStatusDto body)
@@ -94,7 +96,7 @@ namespace BoardGamesStore.Controllers
             return Ok(items);
         }
 
-        [Authorize]
+        [Authorize] //TODO: Admin
         [HttpPost]
         [Route("{orderId:int}/items/add")]
         public async Task<IActionResult> AddItem(int orderId, [FromBody] AddItemDto body)
@@ -103,7 +105,7 @@ namespace BoardGamesStore.Controllers
             return Ok(item);
         }
 
-        [Authorize]
+        [Authorize] //TODO: Admin
         [HttpPut]
         [Route("{orderId:int}/items/{orderItemId:int}/update")]
         public async Task<IActionResult> UpdateItem(int orderId, int orderItemId, [FromBody] UpdateQtyDto body)
@@ -112,7 +114,7 @@ namespace BoardGamesStore.Controllers
             return ok ? NoContent() : NotFound();
         }
 
-        [Authorize]
+        [Authorize] //TODO: Admin
         [HttpDelete]
         [Route("{orderId:int}/items/{orderItemId:int}/delete")]
         public async Task<IActionResult> RemoveItem(int orderId, int orderItemId)
@@ -121,7 +123,7 @@ namespace BoardGamesStore.Controllers
             return ok ? NoContent() : NotFound();
         }
 
-        [Authorize]
+        [Authorize] //TODO: Admin
         [HttpPost]
         [Route("{orderId:int}/items/clear")]
         public async Task<IActionResult> ClearItems(int orderId)
