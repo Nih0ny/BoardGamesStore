@@ -1,159 +1,184 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using BoardGamesStore.Data;
 using BoardGamesStore.Models;
+using BoardGamesStore.Services;
 
 namespace BoardGamesStore.Controllers
 {
-    public class ProductController : Controller
+    [ApiController]
+    [Route("api/[controller]")]
+    public class ProductController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IProductService _products;
+        public ProductController(IProductService products) => _products = products;
 
-        public ProductController(ApplicationDbContext context)
+        // ---- Basic CRUD (kept) ----
+
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAll()
         {
-            _context = context;
+            var ct = HttpContext.RequestAborted;
+            var list = await _products.GetAllAsync(ct: ct);
+            return Ok(list);
         }
 
-        // GET: Product
-        public async Task<IActionResult> Index()
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetById(int id)
         {
-            return View(await _context.Products.ToListAsync());
+            var ct = HttpContext.RequestAborted;
+            var p = await _products.GetByIdAsync(id, ct: ct);
+            return p is null ? NotFound() : Ok(p);
         }
 
-        // GET: Product/Details/5
-        public async Task<IActionResult> Details(int? id)
+        [Authorize]
+        [HttpPost("create")]
+        public async Task<IActionResult> Create([FromBody] Product dto)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var product = await _context.Products
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (product == null)
-            {
-                return NotFound();
-            }
-
-            return View(product);
+            var ct = HttpContext.RequestAborted;
+            var created = await _products.CreateAsync(dto, ct);
+            return Ok(created);
         }
 
-        // GET: Product/Create
-        public IActionResult Create()
+        [Authorize]
+        [HttpPut("{id:int}/update")]
+        public async Task<IActionResult> Update(int id, [FromBody] Product dto)
         {
-            return View();
+            if (id != dto.Id) return BadRequest("Mismatched id.");
+            var ct = HttpContext.RequestAborted;
+            var ok = await _products.UpdateAsync(dto, ct);
+            return ok ? Ok(dto) : NotFound();
         }
 
-        // POST: Product/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,Description,Price,Stock,Category,ImageUrl,BonusRate,MaxBonusPaymentPercent,CreatedAt,UpdatedAt")] Product product)
+        [Authorize]
+        [HttpDelete("{id:int}/delete")]
+        public async Task<IActionResult> Delete(int id)
         {
-            if (ModelState.IsValid)
-            {
-                product.CreatedAt = DateTime.UtcNow;
-                product.UpdatedAt = DateTime.UtcNow;
-                _context.Add(product);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(product);
+            var ct = HttpContext.RequestAborted;
+            var ok = await _products.DeleteAsync(id, ct);
+            return ok ? NoContent() : NotFound();
         }
 
-        // GET: Product/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
+        // ---- New: array-returning, product-ready endpoints ----
 
-            var product = await _context.Products.FindAsync(id);
-            if (product == null)
-            {
-                return NotFound();
-            }
-            return View(product);
+        // DTO for query binding
+        public record SearchRequest(
+            string? Text,
+            string? Category,
+            decimal? MinPrice,
+            decimal? MaxPrice,
+            bool? InStockOnly,
+            string? Sort,
+            int? Skip,
+            int? Take
+        );
+
+        /// <summary>
+        /// Flexible search with filters, sorting and pagination.
+        /// Examples:
+        ///   GET /api/product/search?text=catan&category=Family&minPrice=10&maxPrice=50&inStockOnly=true&sort=price_asc&skip=0&take=20
+        /// </summary>
+        [HttpGet("search")]
+        public async Task<IActionResult> Search([FromQuery] SearchRequest req)
+        {
+            var ct = HttpContext.RequestAborted;
+
+            var q = new ProductQuery(
+                Text: req.Text,
+                Category: req.Category,
+                MinPrice: req.MinPrice,
+                MaxPrice: req.MaxPrice,
+                InStockOnly: req.InStockOnly ?? false,
+                Sort: req.Sort,
+                Skip: req.Skip ?? 0,
+                Take: req.Take ?? 20
+            );
+
+            var result = await _products.SearchAsync(q, ct);
+
+            // Optional: include total count in a header for client-side pagination components
+            Response.Headers["X-Total-Count"] = result.Total.ToString();
+
+            return Ok(result.Items);
         }
 
-        // POST: Product/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Price,Stock,Category,ImageUrl,BonusRate,MaxBonusPaymentPercent,CreatedAt,UpdatedAt")] Product product)
+        /// <summary>
+        /// Batch fetch by IDs: /api/product/by-ids?ids=1&ids=2&ids=3
+        /// </summary>
+        [HttpGet("by-ids")]
+        public async Task<IActionResult> GetByIds([FromQuery] int[] ids)
         {
-            if (id != product.Id)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(product);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ProductExists(product.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(product);
+            var ct = HttpContext.RequestAborted;
+            if (ids is null || ids.Length == 0) return Ok(Array.Empty<Product>());
+            var items = await _products.GetByIdsAsync(ids, ct);
+            return Ok(items);
         }
 
-        // GET: Product/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        /// <summary>
+        /// Simple similarity (category + heuristics).
+        /// </summary>
+        [HttpGet("{id:int}/similar")]
+        public async Task<IActionResult> GetSimilar(int id, [FromQuery] int limit = 8)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var product = await _context.Products
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (product == null)
-            {
-                return NotFound();
-            }
-
-            return View(product);
+            var ct = HttpContext.RequestAborted;
+            var items = await _products.GetSimilarAsync(id, limit, ct);
+            return Ok(items);
         }
 
-        // POST: Product/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        /// <summary>
+        /// Recently added products. Optionally filter by category.
+        /// </summary>
+        [HttpGet("newest")]
+        public async Task<IActionResult> GetNewest([FromQuery] int limit = 12, [FromQuery] string? category = null)
         {
-            var product = await _context.Products.FindAsync(id);
-            if (product != null)
-            {
-                _context.Products.Remove(product);
-            }
-
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            var ct = HttpContext.RequestAborted;
+            var items = await _products.GetNewestAsync(limit, category, ct);
+            return Ok(items);
         }
 
-        private bool ProductExists(int id)
+        /// <summary>
+        /// Categories with product counts (for filters/facets).
+        /// </summary>
+        [HttpGet("categories")]
+        public async Task<IActionResult> GetCategories()
         {
-            return _context.Products.Any(e => e.Id == id);
+            var ct = HttpContext.RequestAborted;
+            var list = await _products.GetCategoriesWithCountsAsync(ct);
+            return Ok(list);
+        }
+
+        /// <summary>
+        /// Price stats for slider UI (min/max/count), optionally within a category.
+        /// </summary>
+        [HttpGet("stats/price")]
+        public async Task<IActionResult> GetPriceStats([FromQuery] string? category = null)
+        {
+            var ct = HttpContext.RequestAborted;
+            var (min, max, count) = await _products.GetPriceStatsAsync(category, ct);
+            return Ok(new { min, max, count });
+        }
+
+        // ---- (Optional but handy) stock & image helpers: mutations kept protected ----
+
+        public record AdjustStockRequest(int ProductId, int Delta);
+
+        [Authorize]
+        [HttpPost("stock/adjust")]
+        public async Task<IActionResult> AdjustStock([FromBody] AdjustStockRequest req)
+        {
+            var ct = HttpContext.RequestAborted;
+            var ok = await _products.AdjustStockAsync(req.ProductId, req.Delta, ct);
+            return ok ? NoContent() : NotFound();
+        }
+
+        public record SetImageRequest(string? ImageUrl);
+
+        [Authorize]
+        [HttpPut("{id:int}/image")]
+        public async Task<IActionResult> SetImage(int id, [FromBody] SetImageRequest req)
+        {
+            var ct = HttpContext.RequestAborted;
+            var ok = await _products.SetImageUrlAsync(id, req.ImageUrl, ct);
+            return ok ? NoContent() : NotFound();
         }
     }
 }
