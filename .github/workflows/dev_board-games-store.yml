@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    runs-on: sparb-rpi
+    runs-on: self-hosted
     permissions:
       contents: read #This is required for actions/checkout
 
@@ -39,7 +39,7 @@ jobs:
           path: ${{env.DOTNET_ROOT}}/myapp
 
   deploy:
-    runs-on: sparb-rpi
+    runs-on: self-hosted
     needs: build
     permissions:
       id-token: write #This is required for requesting the JWT
@@ -67,4 +67,5 @@ jobs:
           package: .
 
           
+
 
