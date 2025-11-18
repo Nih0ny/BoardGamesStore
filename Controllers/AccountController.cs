@@ -1,5 +1,3 @@
-// Controllers/AccountController.cs
-
 using BoardGamesStore.Models;
 using BoardGamesStore.Services;
 using Microsoft.AspNetCore.Authorization;

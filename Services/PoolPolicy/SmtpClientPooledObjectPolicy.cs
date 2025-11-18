@@ -17,14 +17,12 @@ public class SmtpClientPooledObjectPolicy : IPooledObjectPolicy<SmtpClient>
     _smtpSettings = smtpSettings.Value;
   }
 
-  // Цей метод створює, підключає та автентифікує новий SmtpClient
   public SmtpClient Create()
   {
     var client = new SmtpClient();
 
     try
     {
-      // 1. Отримуємо Access Token від Google
       var credential = new UserCredential(
           new GoogleAuthorizationCodeFlow(
               new GoogleAuthorizationCodeFlow.Initializer
@@ -35,13 +33,10 @@ public class SmtpClientPooledObjectPolicy : IPooledObjectPolicy<SmtpClient>
                   ClientSecret = _smtpSettings.ClientSecret
                 }
               }),
-          _smtpSettings.User, // User ID
+          _smtpSettings.User,
           new TokenResponse { RefreshToken = _smtpSettings.RefreshToken }
       );
 
-      // Асинхронно оновлюємо токен. Оскільки метод Create() синхронний,
-      // ми змушені чекати на результат тут.
-      // Це нормально, оскільки створення об'єкта для пулу - рідкісна операція.
       var success = credential.RefreshTokenAsync(CancellationToken.None).GetAwaiter().GetResult();
       if (!success || credential.Token == null || string.IsNullOrEmpty(credential.Token.AccessToken))
       {
@@ -50,14 +45,12 @@ public class SmtpClientPooledObjectPolicy : IPooledObjectPolicy<SmtpClient>
 
       var accessToken = credential.Token.AccessToken;
 
-      // 2. Підключаємося до SMTP сервера
       var secureOption = _smtpSettings.StartTls
           ? SecureSocketOptions.StartTls
           : SecureSocketOptions.Auto;
 
       client.Connect(_smtpSettings.Host, _smtpSettings.Port, secureOption);
 
-      // 3. Автентифікуємося за допомогою OAuth2
       var oauth2 = new SaslMechanismOAuth2(_smtpSettings.User, accessToken);
       client.Authenticate(oauth2);
 
@@ -65,19 +58,16 @@ public class SmtpClientPooledObjectPolicy : IPooledObjectPolicy<SmtpClient>
     }
     catch
     {
-      // Якщо щось пішло не так на будь-якому етапі, знищуємо клієнт
       client.Dispose();
       throw;
     }
   }
 
-  // Цей метод викликається, коли клієнт повертається в пул
   public bool Return(SmtpClient client)
   {
-    // Перевіряємо, чи з'єднання все ще активне
     if (!client.IsConnected)
     {
-      return false; // Якщо ні, пул його знищить і створить новий при потребі
+      return false;
     }
     return true;
   }

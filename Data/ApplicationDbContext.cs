@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Npgsql.EntityFrameworkCore.PostgreSQL;
 
 namespace BoardGamesStore.Data;
 
@@ -33,10 +32,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string
     {
         base.OnModelCreating(modelBuilder);
 
-        // Налаштування схеми для Identity таблиць
-        modelBuilder.HasDefaultSchema("board_games_store");
-
-        // Product
         modelBuilder.Entity<Product>(entity =>
         {
             entity.ToTable("products");
@@ -47,7 +42,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string
             entity.Property(p => p.MaxBonusPaymentPercent).HasColumnType("decimal(5,2)");
         });
 
-        // Comment
         modelBuilder.Entity<Comment>(entity =>
         {
             entity.ToTable("comments");
@@ -62,7 +56,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // Cart
         modelBuilder.Entity<Cart>(entity =>
         {
             entity.ToTable("carts");
@@ -73,7 +66,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // CartItem
         modelBuilder.Entity<CartItem>(entity =>
         {
             entity.ToTable("cart_items");
@@ -88,7 +80,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // Order
         modelBuilder.Entity<Order>(entity =>
         {
             entity.ToTable("orders");
@@ -104,7 +95,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        // OrderStatus
         modelBuilder.Entity<OrderStatus>(entity =>
         {
             entity.ToTable("order_statuses");
@@ -112,7 +102,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string
             entity.Property(os => os.Status).IsRequired().HasMaxLength(100);
         });
 
-        // OrderItem
         modelBuilder.Entity<OrderItem>(entity =>
         {
             entity.ToTable("order_items");
@@ -128,7 +117,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        // PaymentTransaction
         modelBuilder.Entity<PaymentTransaction>(entity =>
         {
             entity.ToTable("payment_transactions");
@@ -140,7 +128,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // BonusTransaction
         modelBuilder.Entity<BonusTransaction>(entity =>
         {
             entity.ToTable("bonus_transactions");
@@ -156,7 +143,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
-        // SimilarProduct
         modelBuilder.Entity<SimilarProduct>(entity =>
         {
             entity.ToTable("similar_products");
@@ -171,7 +157,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // Wishlist
         modelBuilder.Entity<Wishlist>(entity =>
         {
             entity.ToTable("wishlists");
@@ -186,7 +171,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // Evaluation
         modelBuilder.Entity<Evaluation>(entity =>
         {
             entity.ToTable("evaluations");
@@ -201,7 +185,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // ProductReport
         modelBuilder.Entity<ProductReport>(entity =>
         {
             entity.ToTable("product_reports");
@@ -216,7 +199,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // CommentReport
         modelBuilder.Entity<CommentReport>(entity =>
         {
             entity.ToTable("comment_reports");
@@ -231,7 +213,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // RefreshToken
         modelBuilder.Entity<RefreshToken>(entity =>
         {
             entity.ToTable("refresh_tokens");
@@ -243,7 +224,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string
             entity.HasIndex(rt => rt.Token).IsUnique();
         });
 
-        // User (додаткові налаштування)
         modelBuilder.Entity<User>(entity =>
         {
             entity.Property(u => u.Coins).HasColumnType("decimal(18,2)");

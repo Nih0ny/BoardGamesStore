@@ -17,7 +17,6 @@ namespace BoardGamesStore.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasDefaultSchema("board_games_store")
                 .HasAnnotation("ProductVersion", "9.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
@@ -54,7 +53,7 @@ namespace BoardGamesStore.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("bonus_transactions", "board_games_store");
+                    b.ToTable("bonus_transactions", (string)null);
                 });
 
             modelBuilder.Entity("BoardGamesStore.Models.Cart", b =>
@@ -80,7 +79,7 @@ namespace BoardGamesStore.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("carts", "board_games_store");
+                    b.ToTable("carts", (string)null);
                 });
 
             modelBuilder.Entity("BoardGamesStore.Models.CartItem", b =>
@@ -109,7 +108,7 @@ namespace BoardGamesStore.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("cart_items", "board_games_store");
+                    b.ToTable("cart_items", (string)null);
                 });
 
             modelBuilder.Entity("BoardGamesStore.Models.Comment", b =>
@@ -142,7 +141,7 @@ namespace BoardGamesStore.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("comments", "board_games_store");
+                    b.ToTable("comments", (string)null);
                 });
 
             modelBuilder.Entity("BoardGamesStore.Models.CommentReport", b =>
@@ -176,7 +175,7 @@ namespace BoardGamesStore.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("comment_reports", "board_games_store");
+                    b.ToTable("comment_reports", (string)null);
                 });
 
             modelBuilder.Entity("BoardGamesStore.Models.Evaluation", b =>
@@ -200,7 +199,7 @@ namespace BoardGamesStore.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("evaluations", "board_games_store");
+                    b.ToTable("evaluations", (string)null);
                 });
 
             modelBuilder.Entity("BoardGamesStore.Models.Order", b =>
@@ -233,7 +232,7 @@ namespace BoardGamesStore.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("orders", "board_games_store");
+                    b.ToTable("orders", (string)null);
                 });
 
             modelBuilder.Entity("BoardGamesStore.Models.OrderItem", b =>
@@ -262,7 +261,7 @@ namespace BoardGamesStore.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("order_items", "board_games_store");
+                    b.ToTable("order_items", (string)null);
                 });
 
             modelBuilder.Entity("BoardGamesStore.Models.OrderStatus", b =>
@@ -280,7 +279,7 @@ namespace BoardGamesStore.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("order_statuses", "board_games_store");
+                    b.ToTable("order_statuses", (string)null);
                 });
 
             modelBuilder.Entity("BoardGamesStore.Models.PaymentTransaction", b =>
@@ -313,7 +312,7 @@ namespace BoardGamesStore.Migrations
 
                     b.HasIndex("OrderId");
 
-                    b.ToTable("payment_transactions", "board_games_store");
+                    b.ToTable("payment_transactions", (string)null);
                 });
 
             modelBuilder.Entity("BoardGamesStore.Models.Product", b =>
@@ -358,7 +357,7 @@ namespace BoardGamesStore.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("products", "board_games_store");
+                    b.ToTable("products", (string)null);
                 });
 
             modelBuilder.Entity("BoardGamesStore.Models.ProductReport", b =>
@@ -392,7 +391,7 @@ namespace BoardGamesStore.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("product_reports", "board_games_store");
+                    b.ToTable("product_reports", (string)null);
                 });
 
             modelBuilder.Entity("BoardGamesStore.Models.RefreshToken", b =>
@@ -427,7 +426,7 @@ namespace BoardGamesStore.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("refresh_tokens", "board_games_store");
+                    b.ToTable("refresh_tokens", (string)null);
                 });
 
             modelBuilder.Entity("BoardGamesStore.Models.SimilarProduct", b =>
@@ -445,7 +444,7 @@ namespace BoardGamesStore.Migrations
 
                     b.HasIndex("SimilarProductId");
 
-                    b.ToTable("similar_products", "board_games_store");
+                    b.ToTable("similar_products", (string)null);
                 });
 
             modelBuilder.Entity("BoardGamesStore.Models.User", b =>
@@ -518,7 +517,7 @@ namespace BoardGamesStore.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
 
-                    b.ToTable("AspNetUsers", "board_games_store");
+                    b.ToTable("AspNetUsers", (string)null);
                 });
 
             modelBuilder.Entity("BoardGamesStore.Models.Wishlist", b =>
@@ -539,7 +538,7 @@ namespace BoardGamesStore.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("wishlists", "board_games_store");
+                    b.ToTable("wishlists", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -565,7 +564,7 @@ namespace BoardGamesStore.Migrations
                         .IsUnique()
                         .HasDatabaseName("RoleNameIndex");
 
-                    b.ToTable("AspNetRoles", "board_games_store");
+                    b.ToTable("AspNetRoles", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -590,7 +589,7 @@ namespace BoardGamesStore.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("AspNetRoleClaims", "board_games_store");
+                    b.ToTable("AspNetRoleClaims", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
@@ -615,7 +614,7 @@ namespace BoardGamesStore.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AspNetUserClaims", "board_games_store");
+                    b.ToTable("AspNetUserClaims", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
@@ -637,7 +636,7 @@ namespace BoardGamesStore.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AspNetUserLogins", "board_games_store");
+                    b.ToTable("AspNetUserLogins", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
@@ -652,7 +651,7 @@ namespace BoardGamesStore.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("AspNetUserRoles", "board_games_store");
+                    b.ToTable("AspNetUserRoles", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
@@ -671,7 +670,7 @@ namespace BoardGamesStore.Migrations
 
                     b.HasKey("UserId", "LoginProvider", "Name");
 
-                    b.ToTable("AspNetUserTokens", "board_games_store");
+                    b.ToTable("AspNetUserTokens", (string)null);
                 });
 
             modelBuilder.Entity("BoardGamesStore.Models.BonusTransaction", b =>

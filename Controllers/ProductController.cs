@@ -30,7 +30,7 @@ namespace BoardGamesStore.Controllers
             return p is null ? NotFound() : Ok(p);
         }
 
-        //[Authorize]
+        [Authorize(Roles = "Admin")]
         [HttpPost("create")]
         public async Task<IActionResult> Create([FromBody] Product dto)
         {

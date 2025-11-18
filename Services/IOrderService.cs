@@ -22,10 +22,8 @@ namespace BoardGamesStore.Services
 
         Task<bool> ExistsAsync(int id, CancellationToken ct = default);
 
-        /// <summary>Recalculate total from current order items (Price * Quantity).</summary>
         Task<decimal> RecalculateTotalAsync(int orderId, bool save = true, CancellationToken ct = default);
 
-        /// <summary>Change order status (by StatusId).</summary>
         Task<bool> ChangeStatusAsync(int orderId, int statusId, CancellationToken ct = default);
     }
 }

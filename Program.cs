@@ -38,9 +38,7 @@ builder.Services.AddCors(options =>
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-	options.UseNpgsql(connectionString,
-		npgsqlOptions => npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "board_games_store")
-));
+	options.UseNpgsql(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddIdentity<User, IdentityRole>(options =>
@@ -50,7 +48,8 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 		options.SignIn.RequireConfirmedAccount = false; // FIXME: видалити пізніше
 	})
 	.AddEntityFrameworkStores<ApplicationDbContext>()
-	.AddDefaultTokenProviders();
+	.AddDefaultTokenProviders()
+	.AddRoles<IdentityRole>();
 
 var secret = builder.Configuration["JWT:Secret"];
 var issuer = builder.Configuration["JWT:Issuer"];
@@ -79,6 +78,10 @@ builder.Services.AddAuthentication(options =>
 		ClockSkew = TimeSpan.Zero
 	};
 });
+
+builder.Services.AddAuthorizationBuilder()
+	.AddPolicy("AdminOnly", policy =>
+			policy.RequireRole("Admin"));
 
 builder.Services.AddControllersWithViews();
 

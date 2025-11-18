@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+
+  db:
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_DB: board_games_store
+      POSTGRES_USER: board_games_store_user
+      POSTGRES_PASSWORD: 0Sbt8Gd3SclxXEVkVuai2zV35ZapLBZhZDNXWVspPIzUwfYvTRvoWufypJz1BFd9
+    volumes:
+      - db_data:/var/lib/postgresql/data # Зберігання даних
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U board_games_store_user -d board_games_store"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./BoardGamesStore
+    image: my-backend:latest
+    container_name: my_backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+
+  # 🖥️ Контейнер Фронтенду (Frontend)
+  # frontend:
+  #   build:
+  #     context: ./frontend # Шлях до Dockerfile фронтенду
+  #   image: my-frontend:latest
+  #   container_name: my_frontend
+  #   ports:
+  #     - "3000:3000" # Порт, на якому працює фронтенд
+  #   depends_on:
+  #     - backend # Забезпечує запуск Backend перед фронтендом (якщо потрібно)
+    
+volumes:
+  db_data: # Визначення тома для збереження даних DB

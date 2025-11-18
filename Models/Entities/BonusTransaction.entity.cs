@@ -14,6 +14,6 @@ public class BonusTransaction
   public required Order Order { get; set; }
 
   public decimal Amount { get; set; }
-  public required string Type { get; set; } // Accrual / Usage
+  public required string Type { get; set; } // TODO: Accrual / Usage
   public DateTime CreatedAt { get; set; }
 }

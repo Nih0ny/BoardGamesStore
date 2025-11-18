@@ -7,17 +7,13 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BoardGamesStore.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.EnsureSchema(
-                name: "board_games_store");
-
             migrationBuilder.CreateTable(
                 name: "AspNetRoles",
-                schema: "board_games_store",
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "text", nullable: false),
@@ -32,7 +28,6 @@ namespace BoardGamesStore.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AspNetUsers",
-                schema: "board_games_store",
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "text", nullable: false),
@@ -61,7 +56,6 @@ namespace BoardGamesStore.Migrations
 
             migrationBuilder.CreateTable(
                 name: "order_statuses",
-                schema: "board_games_store",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -75,7 +69,6 @@ namespace BoardGamesStore.Migrations
 
             migrationBuilder.CreateTable(
                 name: "products",
-                schema: "board_games_store",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -98,7 +91,6 @@ namespace BoardGamesStore.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AspNetRoleClaims",
-                schema: "board_games_store",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -113,7 +105,6 @@ namespace BoardGamesStore.Migrations
                     table.ForeignKey(
                         name: "FK_AspNetRoleClaims_AspNetRoles_RoleId",
                         column: x => x.RoleId,
-                        principalSchema: "board_games_store",
                         principalTable: "AspNetRoles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -121,7 +112,6 @@ namespace BoardGamesStore.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AspNetUserClaims",
-                schema: "board_games_store",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -136,7 +126,6 @@ namespace BoardGamesStore.Migrations
                     table.ForeignKey(
                         name: "FK_AspNetUserClaims_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalSchema: "board_games_store",
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -144,7 +133,6 @@ namespace BoardGamesStore.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AspNetUserLogins",
-                schema: "board_games_store",
                 columns: table => new
                 {
                     LoginProvider = table.Column<string>(type: "text", nullable: false),
@@ -158,7 +146,6 @@ namespace BoardGamesStore.Migrations
                     table.ForeignKey(
                         name: "FK_AspNetUserLogins_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalSchema: "board_games_store",
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -166,7 +153,6 @@ namespace BoardGamesStore.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AspNetUserRoles",
-                schema: "board_games_store",
                 columns: table => new
                 {
                     UserId = table.Column<string>(type: "text", nullable: false),
@@ -178,14 +164,12 @@ namespace BoardGamesStore.Migrations
                     table.ForeignKey(
                         name: "FK_AspNetUserRoles_AspNetRoles_RoleId",
                         column: x => x.RoleId,
-                        principalSchema: "board_games_store",
                         principalTable: "AspNetRoles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_AspNetUserRoles_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalSchema: "board_games_store",
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -193,7 +177,6 @@ namespace BoardGamesStore.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AspNetUserTokens",
-                schema: "board_games_store",
                 columns: table => new
                 {
                     UserId = table.Column<string>(type: "text", nullable: false),
@@ -207,7 +190,6 @@ namespace BoardGamesStore.Migrations
                     table.ForeignKey(
                         name: "FK_AspNetUserTokens_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalSchema: "board_games_store",
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -215,7 +197,6 @@ namespace BoardGamesStore.Migrations
 
             migrationBuilder.CreateTable(
                 name: "carts",
-                schema: "board_games_store",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -230,7 +211,6 @@ namespace BoardGamesStore.Migrations
                     table.ForeignKey(
                         name: "FK_carts_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalSchema: "board_games_store",
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -238,7 +218,6 @@ namespace BoardGamesStore.Migrations
 
             migrationBuilder.CreateTable(
                 name: "refresh_tokens",
-                schema: "board_games_store",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -255,7 +234,6 @@ namespace BoardGamesStore.Migrations
                     table.ForeignKey(
                         name: "FK_refresh_tokens_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalSchema: "board_games_store",
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -263,7 +241,6 @@ namespace BoardGamesStore.Migrations
 
             migrationBuilder.CreateTable(
                 name: "orders",
-                schema: "board_games_store",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -280,14 +257,12 @@ namespace BoardGamesStore.Migrations
                     table.ForeignKey(
                         name: "FK_orders_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalSchema: "board_games_store",
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_orders_order_statuses_StatusId",
                         column: x => x.StatusId,
-                        principalSchema: "board_games_store",
                         principalTable: "order_statuses",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -295,7 +270,6 @@ namespace BoardGamesStore.Migrations
 
             migrationBuilder.CreateTable(
                 name: "comments",
-                schema: "board_games_store",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -312,14 +286,12 @@ namespace BoardGamesStore.Migrations
                     table.ForeignKey(
                         name: "FK_comments_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalSchema: "board_games_store",
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_comments_products_ProductId",
                         column: x => x.ProductId,
-                        principalSchema: "board_games_store",
                         principalTable: "products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -327,7 +299,6 @@ namespace BoardGamesStore.Migrations
 
             migrationBuilder.CreateTable(
                 name: "evaluations",
-                schema: "board_games_store",
                 columns: table => new
                 {
                     UserId = table.Column<string>(type: "text", nullable: false),
@@ -342,14 +313,12 @@ namespace BoardGamesStore.Migrations
                     table.ForeignKey(
                         name: "FK_evaluations_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalSchema: "board_games_store",
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_evaluations_products_ProductId",
                         column: x => x.ProductId,
-                        principalSchema: "board_games_store",
                         principalTable: "products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -357,7 +326,6 @@ namespace BoardGamesStore.Migrations
 
             migrationBuilder.CreateTable(
                 name: "product_reports",
-                schema: "board_games_store",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -374,14 +342,12 @@ namespace BoardGamesStore.Migrations
                     table.ForeignKey(
                         name: "FK_product_reports_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalSchema: "board_games_store",
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_product_reports_products_ProductId",
                         column: x => x.ProductId,
-                        principalSchema: "board_games_store",
                         principalTable: "products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -389,7 +355,6 @@ namespace BoardGamesStore.Migrations
 
             migrationBuilder.CreateTable(
                 name: "similar_products",
-                schema: "board_games_store",
                 columns: table => new
                 {
                     ProductId = table.Column<int>(type: "integer", nullable: false),
@@ -402,14 +367,12 @@ namespace BoardGamesStore.Migrations
                     table.ForeignKey(
                         name: "FK_similar_products_products_ProductId",
                         column: x => x.ProductId,
-                        principalSchema: "board_games_store",
                         principalTable: "products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_similar_products_products_SimilarProductId",
                         column: x => x.SimilarProductId,
-                        principalSchema: "board_games_store",
                         principalTable: "products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -417,7 +380,6 @@ namespace BoardGamesStore.Migrations
 
             migrationBuilder.CreateTable(
                 name: "wishlists",
-                schema: "board_games_store",
                 columns: table => new
                 {
                     UserId = table.Column<string>(type: "text", nullable: false),
@@ -431,14 +393,12 @@ namespace BoardGamesStore.Migrations
                     table.ForeignKey(
                         name: "FK_wishlists_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalSchema: "board_games_store",
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_wishlists_products_ProductId",
                         column: x => x.ProductId,
-                        principalSchema: "board_games_store",
                         principalTable: "products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -446,7 +406,6 @@ namespace BoardGamesStore.Migrations
 
             migrationBuilder.CreateTable(
                 name: "cart_items",
-                schema: "board_games_store",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -462,14 +421,12 @@ namespace BoardGamesStore.Migrations
                     table.ForeignKey(
                         name: "FK_cart_items_carts_CartId",
                         column: x => x.CartId,
-                        principalSchema: "board_games_store",
                         principalTable: "carts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_cart_items_products_ProductId",
                         column: x => x.ProductId,
-                        principalSchema: "board_games_store",
                         principalTable: "products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -477,7 +434,6 @@ namespace BoardGamesStore.Migrations
 
             migrationBuilder.CreateTable(
                 name: "bonus_transactions",
-                schema: "board_games_store",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -494,14 +450,12 @@ namespace BoardGamesStore.Migrations
                     table.ForeignKey(
                         name: "FK_bonus_transactions_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalSchema: "board_games_store",
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_bonus_transactions_orders_OrderId",
                         column: x => x.OrderId,
-                        principalSchema: "board_games_store",
                         principalTable: "orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
@@ -509,7 +463,6 @@ namespace BoardGamesStore.Migrations
 
             migrationBuilder.CreateTable(
                 name: "order_items",
-                schema: "board_games_store",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -525,14 +478,12 @@ namespace BoardGamesStore.Migrations
                     table.ForeignKey(
                         name: "FK_order_items_orders_OrderId",
                         column: x => x.OrderId,
-                        principalSchema: "board_games_store",
                         principalTable: "orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_order_items_products_ProductId",
                         column: x => x.ProductId,
-                        principalSchema: "board_games_store",
                         principalTable: "products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -540,7 +491,6 @@ namespace BoardGamesStore.Migrations
 
             migrationBuilder.CreateTable(
                 name: "payment_transactions",
-                schema: "board_games_store",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -558,7 +508,6 @@ namespace BoardGamesStore.Migrations
                     table.ForeignKey(
                         name: "FK_payment_transactions_orders_OrderId",
                         column: x => x.OrderId,
-                        principalSchema: "board_games_store",
                         principalTable: "orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -566,7 +515,6 @@ namespace BoardGamesStore.Migrations
 
             migrationBuilder.CreateTable(
                 name: "comment_reports",
-                schema: "board_games_store",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -583,14 +531,12 @@ namespace BoardGamesStore.Migrations
                     table.ForeignKey(
                         name: "FK_comment_reports_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalSchema: "board_games_store",
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_comment_reports_comments_CommentId",
                         column: x => x.CommentId,
-                        principalSchema: "board_games_store",
                         principalTable: "comments",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -598,173 +544,145 @@ namespace BoardGamesStore.Migrations
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
-                schema: "board_games_store",
                 table: "AspNetRoleClaims",
                 column: "RoleId");
 
             migrationBuilder.CreateIndex(
                 name: "RoleNameIndex",
-                schema: "board_games_store",
                 table: "AspNetRoles",
                 column: "NormalizedName",
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetUserClaims_UserId",
-                schema: "board_games_store",
                 table: "AspNetUserClaims",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetUserLogins_UserId",
-                schema: "board_games_store",
                 table: "AspNetUserLogins",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetUserRoles_RoleId",
-                schema: "board_games_store",
                 table: "AspNetUserRoles",
                 column: "RoleId");
 
             migrationBuilder.CreateIndex(
                 name: "EmailIndex",
-                schema: "board_games_store",
                 table: "AspNetUsers",
                 column: "NormalizedEmail");
 
             migrationBuilder.CreateIndex(
                 name: "UserNameIndex",
-                schema: "board_games_store",
                 table: "AspNetUsers",
                 column: "NormalizedUserName",
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_bonus_transactions_OrderId",
-                schema: "board_games_store",
                 table: "bonus_transactions",
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_bonus_transactions_UserId",
-                schema: "board_games_store",
                 table: "bonus_transactions",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_cart_items_CartId",
-                schema: "board_games_store",
                 table: "cart_items",
                 column: "CartId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_cart_items_ProductId",
-                schema: "board_games_store",
                 table: "cart_items",
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_carts_UserId",
-                schema: "board_games_store",
                 table: "carts",
                 column: "UserId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_comment_reports_CommentId",
-                schema: "board_games_store",
                 table: "comment_reports",
                 column: "CommentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_comment_reports_UserId",
-                schema: "board_games_store",
                 table: "comment_reports",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_comments_ProductId",
-                schema: "board_games_store",
                 table: "comments",
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_comments_UserId",
-                schema: "board_games_store",
                 table: "comments",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_evaluations_ProductId",
-                schema: "board_games_store",
                 table: "evaluations",
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_order_items_OrderId",
-                schema: "board_games_store",
                 table: "order_items",
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_order_items_ProductId",
-                schema: "board_games_store",
                 table: "order_items",
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_orders_StatusId",
-                schema: "board_games_store",
                 table: "orders",
                 column: "StatusId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_orders_UserId",
-                schema: "board_games_store",
                 table: "orders",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_payment_transactions_OrderId",
-                schema: "board_games_store",
                 table: "payment_transactions",
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_product_reports_ProductId",
-                schema: "board_games_store",
                 table: "product_reports",
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_product_reports_UserId",
-                schema: "board_games_store",
                 table: "product_reports",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_refresh_tokens_Token",
-                schema: "board_games_store",
                 table: "refresh_tokens",
                 column: "Token",
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_refresh_tokens_UserId",
-                schema: "board_games_store",
                 table: "refresh_tokens",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_similar_products_SimilarProductId",
-                schema: "board_games_store",
                 table: "similar_products",
                 column: "SimilarProductId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_wishlists_ProductId",
-                schema: "board_games_store",
                 table: "wishlists",
                 column: "ProductId");
         }
@@ -773,92 +691,70 @@ namespace BoardGamesStore.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "AspNetRoleClaims",
-                schema: "board_games_store");
+                name: "AspNetRoleClaims");
 
             migrationBuilder.DropTable(
-                name: "AspNetUserClaims",
-                schema: "board_games_store");
+                name: "AspNetUserClaims");
 
             migrationBuilder.DropTable(
-                name: "AspNetUserLogins",
-                schema: "board_games_store");
+                name: "AspNetUserLogins");
 
             migrationBuilder.DropTable(
-                name: "AspNetUserRoles",
-                schema: "board_games_store");
+                name: "AspNetUserRoles");
 
             migrationBuilder.DropTable(
-                name: "AspNetUserTokens",
-                schema: "board_games_store");
+                name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "bonus_transactions",
-                schema: "board_games_store");
+                name: "bonus_transactions");
 
             migrationBuilder.DropTable(
-                name: "cart_items",
-                schema: "board_games_store");
+                name: "cart_items");
 
             migrationBuilder.DropTable(
-                name: "comment_reports",
-                schema: "board_games_store");
+                name: "comment_reports");
 
             migrationBuilder.DropTable(
-                name: "evaluations",
-                schema: "board_games_store");
+                name: "evaluations");
 
             migrationBuilder.DropTable(
-                name: "order_items",
-                schema: "board_games_store");
+                name: "order_items");
 
             migrationBuilder.DropTable(
-                name: "payment_transactions",
-                schema: "board_games_store");
+                name: "payment_transactions");
 
             migrationBuilder.DropTable(
-                name: "product_reports",
-                schema: "board_games_store");
+                name: "product_reports");
 
             migrationBuilder.DropTable(
-                name: "refresh_tokens",
-                schema: "board_games_store");
+                name: "refresh_tokens");
 
             migrationBuilder.DropTable(
-                name: "similar_products",
-                schema: "board_games_store");
+                name: "similar_products");
 
             migrationBuilder.DropTable(
-                name: "wishlists",
-                schema: "board_games_store");
+                name: "wishlists");
 
             migrationBuilder.DropTable(
-                name: "AspNetRoles",
-                schema: "board_games_store");
+                name: "AspNetRoles");
 
             migrationBuilder.DropTable(
-                name: "carts",
-                schema: "board_games_store");
+                name: "carts");
 
             migrationBuilder.DropTable(
-                name: "comments",
-                schema: "board_games_store");
+                name: "comments");
 
             migrationBuilder.DropTable(
-                name: "orders",
-                schema: "board_games_store");
+                name: "orders");
 
             migrationBuilder.DropTable(
-                name: "products",
-                schema: "board_games_store");
+                name: "products");
 
             migrationBuilder.DropTable(
-                name: "AspNetUsers",
-                schema: "board_games_store");
+                name: "AspNetUsers");
 
             migrationBuilder.DropTable(
-                name: "order_statuses",
-                schema: "board_games_store");
+                name: "order_statuses");
         }
     }
 }

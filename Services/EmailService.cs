@@ -30,7 +30,6 @@ public class EmailService : IEmailService
         mime.Subject = subject;
         mime.Body = new TextPart("html") { Text = message };
 
-        // Отримуємо SmtpClient з пулу
         var client = _clientPool.Get();
 
         try
@@ -42,22 +41,11 @@ public class EmailService : IEmailService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to send email to {Email}", email);
-            // Тут можна додати логіку для обробки помилок, наприклад,
-            // якщо з'єднання розірвалося
             throw;
         }
         finally
         {
-            // Дуже важливо! Повертаємо клієнт назад у пул
             _clientPool.Return(client);
         }
     }
-}
-
-internal class MailKitEmailSender
-{
-}
-
-internal class EmailSettings
-{
 }

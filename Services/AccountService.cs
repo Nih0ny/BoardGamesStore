@@ -1,43 +1,27 @@
-// Services/AccountService.cs
-
 using BoardGamesStore.Data;
 using BoardGamesStore.Models;
 using BoardGamesStore.Services;
-using BoardGamesStore.Services.Settings;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using System.Web; // Needed for HttpUtility.UrlEncode
+using System.Web;
 
 public class AccountService : IAccountService
 {
-  private readonly UserManager<User> _userManager; // Assume your model is named User
+  private readonly UserManager<User> _userManager;
   private readonly SignInManager<User> _signInManager;
   private readonly IEmailService _emailService;
-  private readonly IPasswordHasher<User> _hasherService;
   private readonly ITokenService _tokenService;
-  private readonly ApplicationDbContext _context;
 
   public AccountService(
       UserManager<User> userManager,
       SignInManager<User> signInManager,
       IEmailService emailService,
-      IPasswordHasher<User> passwordHasher,
-      ITokenService tokenService,
-      ApplicationDbContext context
+      ITokenService tokenService
     )
   {
     _userManager = userManager;
     _signInManager = signInManager;
     _emailService = emailService;
-    _hasherService = passwordHasher;
     _tokenService = tokenService;
-    _context = context;
   }
 
   public async Task<IdentityResult> RegisterUserAsync(RegisterDto registerDto)
