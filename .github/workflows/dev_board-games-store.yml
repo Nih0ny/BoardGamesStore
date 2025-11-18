@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       contents: read #This is required for actions/checkout
 
@@ -39,31 +39,25 @@ jobs:
           path: ${{env.DOTNET_ROOT}}/myapp
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: build
     permissions:
       id-token: write #This is required for requesting the JWT
       contents: read #This is required for actions/checkout
 
     steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v4
-        with:
-          name: .net-app
-      
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_71BB93F0EA9C4DD59B1D0D7476866878 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_7A45232FCBB04EC8B50D85384696AFD3 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_2FFDD293BF9C410B87F5E2F6CF2B12E0 }}
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'board-games-store'
-          slot-name: 'Production'
-          package: .
-
+      - name: Deploy with Docker Compose
+        run: |
+          echo "Building and starting container..."
           
+          docker compose up --build -d --remove-orphans
+          
+          echo "Cleaning up unused images..."
+          docker image prune -f
+          
+
+
+
