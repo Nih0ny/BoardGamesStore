@@ -49,6 +49,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Create appsettings.json
+        run: echo '${{ secrets.APPSETTINGS_JSON }}' > appsettings.json
+
       - name: Deploy with Docker Compose
         run: |
           echo "Building and starting container..."
@@ -58,6 +61,7 @@ jobs:
           echo "Cleaning up unused images..."
           docker image prune -f
           
+
 
 
 
