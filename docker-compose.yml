@@ -18,7 +18,7 @@ services:
 
   backend:
     build:
-      context: ./BoardGamesStore
+      context: .
     image: my-backend:latest
     container_name: my_backend
     ports:
