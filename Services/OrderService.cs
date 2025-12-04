@@ -1,137 +1,266 @@
 using BoardGamesStore.Data;
 using BoardGamesStore.Models;
+using BoardGamesStore.Models.Entities;
 using BoardGamesStore.Services;
+using FluentResults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 
-namespace BoardGamesStore.Services
+namespace BoardGamesStore.Services;
+
+public class OrderService(ApplicationDbContext context, ICartService cartService) : IOrderService
 {
-    public class OrderService : IOrderService
+  private readonly ApplicationDbContext _context = context;
+  private readonly ICartService _cartService = cartService;
+
+  public async Task<PagedResult<OrderDto>> GetAllAsync(
+    int pageNumber,
+    int pageSize,
+    CancellationToken ct = default)
+  {
+    var query = _context.Orders.AsNoTracking();
+
+    var totalCount = await query.CountAsync(ct);
+
+    var items = await query
+        .OrderByDescending(o => o.CreatedAt)
+        .Skip((pageNumber - 1) * pageSize)
+        .Take(pageSize)
+        .Select(o => new OrderDto
+        {
+          Id = o.Id,
+          UserEmail = o.User.Email!,
+          StatusName = o.Status.Name,
+          Total = o.Total,
+          BonusTotal = o.BonusTotal,
+          CreatedAt = o.CreatedAt,
+          Items = o.OrderItems!.Select(oi => new OrderItemDto
+          {
+            ProductName = oi.Product.Name,
+            Quantity = oi.Quantity,
+            Price = oi.Price
+          }).ToList()
+        })
+        .ToListAsync(ct);
+
+    return new PagedResult<OrderDto>
     {
-        private readonly ApplicationDbContext _db;
+      Items = items,
+      TotalCount = totalCount,
+      PageNumber = pageNumber,
+      PageSize = pageSize
+    };
+  }
 
-        public OrderService(ApplicationDbContext db) => _db = db;
-
-        public async Task<List<Order>> GetAllAsync(
-            Func<IQueryable<Order>, IIncludableQueryable<Order, object>>? include = null,
-            CancellationToken ct = default)
+  public async Task<OrderDto?> GetByIdAsync(
+    int id,
+    CancellationToken ct = default)
+  {
+    return await _context.Orders
+        .AsNoTracking()
+        .Where(o => o.Id == id)
+        .Select(o => new OrderDto
         {
-            IQueryable<Order> q = _db.Orders.AsQueryable();
-            if (include is not null) q = include(q);
-            return await q.AsNoTracking().ToListAsync(ct);
-        }
+          Id = o.Id,
+          UserEmail = o.User.Email!,
+          StatusName = o.Status.Name,
+          Total = o.Total,
+          BonusTotal = o.BonusTotal,
+          CreatedAt = o.CreatedAt,
+          Items = o.OrderItems!.Select(oi => new OrderItemDto
+          {
+            ProductId = oi.ProductId,
+            ProductName = oi.Product.Name,
+            Quantity = oi.Quantity,
+            Price = oi.Price
+          }).ToList()
+        })
+        .FirstOrDefaultAsync(ct);
+  }
 
-        public async Task<Order?> GetByIdAsync(
-            int id,
-            Func<IQueryable<Order>, IIncludableQueryable<Order, object>>? include = null,
-            CancellationToken ct = default)
+  public async Task<PagedResult<OrderDto>> GetByUserIdAsync(
+    string userId,
+    int pageNumber,
+    int pageSize,
+    CancellationToken ct = default)
+  {
+    var query = _context.Orders
+        .AsNoTracking()
+        .Where(o => o.UserId == userId);
+
+    var totalCount = await query.CountAsync(ct);
+
+    var items = await query
+        .OrderByDescending(o => o.CreatedAt)
+        .Skip((pageNumber - 1) * pageSize)
+        .Take(pageSize)
+        .Select(o => new OrderDto
         {
-            IQueryable<Order> q = _db.Orders.Where(o => o.Id == id);
-            if (include is not null) q = include(q);
-            return await q.AsNoTracking().FirstOrDefaultAsync(ct);
-        }
+          Id = o.Id,
+          UserEmail = o.User.Email!,
+          StatusName = o.Status.Name,
+          Total = o.Total,
+          BonusTotal = o.BonusTotal,
+          CreatedAt = o.CreatedAt,
+          Items = o.OrderItems!.Select(oi => new OrderItemDto
+          {
+            ProductId = oi.ProductId,
+            ProductName = oi.Product.Name,
+            Quantity = oi.Quantity,
+            Price = oi.Price
+          }).ToList()
+        })
+        .ToListAsync(ct);
 
-        public async Task<Order> CreateAsync(string userId, int statusId, decimal total, CancellationToken ct = default)
-        {
-            // Load required navs if your model uses 'required' on them
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId, ct)
-                       ?? throw new KeyNotFoundException($"User '{userId}' not found.");
+    return new PagedResult<OrderDto>
+    {
+      Items = items,
+      TotalCount = totalCount,
+      PageNumber = pageNumber,
+      PageSize = pageSize
+    };
+  }
 
-            var status = await _db.OrderStatuses.FirstOrDefaultAsync(s => s.Id == statusId, ct)
-                         ?? throw new KeyNotFoundException($"OrderStatus '{statusId}' not found.");
+  public async Task<Result<Order>> CreateAsync(string userId, int statusId, CancellationToken ct = default)
+  {
+    var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
+    if (user == null) return Result.Fail($"User '{userId}' not found.");
 
-            var now = DateTime.UtcNow;
+    var status = await _context.OrderStatuses.FirstOrDefaultAsync(s => s.Id == statusId, ct);
+    if (status == null) return Result.Fail($"OrderStatus '{statusId}' not found.");
 
-            var order = new Order
-            {
-                UserId = userId,
-                User = user,            // set required nav if 'required User User'
-                StatusId = statusId,
-                Status = status,        // set required nav if 'required OrderStatus Status'
-                Total = total,
-                CreatedAt = now,
-                UpdatedAt = now
-            };
+    var cart = await _cartService.GetByUserIdAsync(user.Id, ct);
+    if (cart == null || cart.Items.Count == 0) return Result.Fail("Cart is empty. Cannot create order.");
 
-            _db.Orders.Add(order);
-            await _db.SaveChangesAsync(ct);
-            return order;
-        }
+    var productIds = cart.Items.Select(ci => ci.ProductId).Distinct().ToList();
 
-        public async Task<bool> UpdateAsync(Order order, CancellationToken ct = default)
-        {
-            // Optionally validate related keys exist (UserId string!)
-            var userExists = await _db.Users.AnyAsync(u => u.Id == order.UserId, ct);
-            if (!userExists) throw new KeyNotFoundException($"User '{order.UserId}' not found.");
+    var productsDict = await _context.Products
+        .Where(p => productIds.Contains(p.Id))
+        .ToDictionaryAsync(p => p.Id, ct);
 
-            var statusExists = await _db.OrderStatuses.AnyAsync(s => s.Id == order.StatusId, ct);
-            if (!statusExists) throw new KeyNotFoundException($"OrderStatus '{order.StatusId}' not found.");
+    if (productsDict.Count != productIds.Count) return Result.Fail("Some products in the cart no longer exist.");
 
-            order.UpdatedAt = DateTime.UtcNow;
-            _db.Orders.Update(order);
 
-            try
-            {
-                await _db.SaveChangesAsync(ct);
-                return true;
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                return await ExistsAsync(order.Id, ct);
-            }
-        }
+    var now = DateTime.UtcNow;
+    var bonusTotal = cart.Items.Sum(item =>
+    {
+      if (productsDict.TryGetValue(item.ProductId, out var product)) return product.MaxBonusPaymentPercent / 100m * item.Price * item.Quantity;
+      return 0m;
+    });
 
-        public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
-        {
-            var order = await _db.Orders.FirstOrDefaultAsync(o => o.Id == id, ct);
-            if (order is null) return false;
+    var order = new Order
+    {
+      UserId = userId,
+      User = user,
+      StatusId = statusId,
+      Status = status,
+      BonusTotal = bonusTotal,
+      CreatedAt = now,
+      UpdatedAt = now
+    };
 
-            // If cascade delete isn't configured, remove items first
-            var items = _db.OrderItems.Where(oi => oi.OrderId == id);
-            _db.OrderItems.RemoveRange(items);
+    var orderItems = new List<OrderItem>();
+    decimal calculatedTotal = 0;
 
-            _db.Orders.Remove(order);
-            await _db.SaveChangesAsync(ct);
-            return true;
-        }
+    foreach (var item in cart.Items)
+    {
+      if (!productsDict.TryGetValue(item.ProductId, out var productEntity))
+      {
+        continue;
+      }
 
-        public Task<bool> ExistsAsync(int id, CancellationToken ct = default) =>
-            _db.Orders.AnyAsync(o => o.Id == id, ct);
+      var orderItem = new OrderItem
+      {
+        ProductId = item.ProductId,
+        Product = productEntity,
+        Order = order,
+        Quantity = item.Quantity,
+        Price = item.Price
+      };
 
-        public async Task<decimal> RecalculateTotalAsync(int orderId, bool save = true, CancellationToken ct = default)
-        {
-            var items = await _db.OrderItems
-                .Where(oi => oi.OrderId == orderId)
-                .Select(oi => new { oi.Price, oi.Quantity })
-                .ToListAsync(ct);
-
-            var total = items.Sum(i => i.Price * i.Quantity);
-
-            var order = await _db.Orders.FirstOrDefaultAsync(o => o.Id == orderId, ct)
-                        ?? throw new KeyNotFoundException($"Order {orderId} not found.");
-            order.Total = total;
-            order.UpdatedAt = DateTime.UtcNow;
-
-            if (save)
-                await _db.SaveChangesAsync(ct);
-
-            return total;
-        }
-
-        public async Task<bool> ChangeStatusAsync(int orderId, int statusId, CancellationToken ct = default)
-        {
-            var order = await _db.Orders.FirstOrDefaultAsync(o => o.Id == orderId, ct);
-            if (order is null) return false;
-
-            var status = await _db.OrderStatuses.FirstOrDefaultAsync(s => s.Id == statusId, ct)
-                         ?? throw new KeyNotFoundException($"OrderStatus '{statusId}' not found.");
-
-            order.StatusId = statusId;
-            order.Status = status; // set nav if 'required'
-            order.UpdatedAt = DateTime.UtcNow;
-
-            await _db.SaveChangesAsync(ct);
-            return true;
-        }
+      // FIXME: Check stock and reduce it before addin in order
+      orderItems.Add(orderItem);
+      calculatedTotal += orderItem.Price * orderItem.Quantity;
     }
+
+    order.OrderItems = orderItems;
+    order.Total = calculatedTotal;
+
+    using var transaction = await _context.Database.BeginTransactionAsync(ct);
+    try
+    {
+      _context.Orders.Add(order);
+      await _context.SaveChangesAsync(ct);
+
+      await _cartService.ClearAsync(userId, ct);
+
+      await transaction.CommitAsync(ct);
+    }
+    catch (Exception)
+    {
+      await transaction.RollbackAsync(ct);
+      return Result.Fail("Error creating order");
+    }
+
+    return order;
+  }
+
+  public async Task<Result> ReturnToCartAsync(int orderId, CancellationToken ct = default)
+  {
+    var order = await _context.Orders
+        .Include(o => o.OrderItems)
+        .FirstOrDefaultAsync(o => o.Id == orderId, ct);
+    if (order is null) return Result.Fail("Order not found.");
+
+    var userId = order.UserId;
+
+    using var transaction = await _context.Database.BeginTransactionAsync(ct);
+    try
+    {
+      foreach (var item in order.OrderItems!)
+      {
+        var addResult = await _cartService.AddItemAsync(userId, item.ProductId, item.Quantity, ct);
+        if (addResult.IsFailed)
+        {
+          await transaction.RollbackAsync(ct);
+          return Result.Fail($"Failed to add product {item.ProductId} to cart: {string.Join(", ", addResult.Errors.Select(e => e.Message))}");
+        }
+      }
+
+      await transaction.CommitAsync(ct);
+    }
+    catch (Exception)
+    {
+      await transaction.RollbackAsync(ct);
+      return Result.Fail("Error returning items to cart");
+    }
+
+    return Result.Ok();
+  }
+
+  public async Task<Result> DeleteAsync(int id, CancellationToken ct = default)
+  {
+    var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == id, ct);
+    if (order is null) return Result.Fail("Order not found.");
+
+    _context.Orders.Remove(order);
+    await _context.SaveChangesAsync(ct);
+    return Result.Ok();
+  }
+
+  public async Task<Result> ChangeStatusAsync(int orderId, int statusId, CancellationToken ct = default)
+  {
+    var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == orderId, ct);
+    if (order is null) return Result.Fail("Order not found.");
+
+    var status = await _context.OrderStatuses.FirstOrDefaultAsync(s => s.Id == statusId, ct);
+    if (status is null) return Result.Fail("OrderStatus not found.");
+
+    order.StatusId = statusId;
+    order.Status = status; // set nav if 'required'
+    order.UpdatedAt = DateTime.UtcNow;
+
+    await _context.SaveChangesAsync(ct);
+    return Result.Ok();
+  }
 }

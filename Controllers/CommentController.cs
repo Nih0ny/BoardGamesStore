@@ -2,169 +2,222 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 using BoardGamesStore.Data;
 using BoardGamesStore.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using BoardGamesStore.Models.Entities;
 
-namespace BoardGamesStore.Controllers
+namespace BoardGamesStore.Controllers;
+
+[ApiController]
+[Route("api")]
+public class CommentsController(ApplicationDbContext context) : ControllerBase
 {
-    public class CommentController : Controller
+    private readonly ApplicationDbContext _context = context;
+
+    // Отримати всі коментарі для продукту
+    // GET: /api/products/{productId}/comments
+    [HttpGet("products/{productId:int}/comments")]
+    public async Task<ActionResult<IEnumerable<CommentDto>>> GetCommentsForProduct(int productId)
     {
-        private readonly ApplicationDbContext _context;
-
-        public CommentController(ApplicationDbContext context)
+        if (!await _context.Products.AnyAsync(p => p.Id == productId))
         {
-            _context = context;
+            return NotFound($"Product with id {productId} not found.");
         }
 
-        // GET: Comment
-        public async Task<IActionResult> Index()
+        var comments = await _context.Comments
+            .Where(c => c.ProductId == productId)
+            .Include(c => c.User)
+            .Select(c => new CommentDto
+            {
+                Id = c.Id,
+                Content = c.Content!,
+                CreatedAt = c.CreatedAt,
+                UpdatedAt = c.UpdatedAt,
+                UserId = c.UserId,
+                UserName = c.User!.UserName ?? "Anonymous",
+                ProductId = c.ProductId
+            })
+            .OrderByDescending(c => c.CreatedAt)
+            .ToListAsync();
+
+        return Ok(comments);
+    }
+
+    // Отримати всі коментарі
+    // GET: /api/comments
+    [HttpGet("comments")]
+    public async Task<ActionResult<IEnumerable<CommentDto>>> GetAllComments()
+    {
+        var comments = await _context.Comments
+            .Include(c => c.User)
+            .Select(c => new CommentDto
+            {
+                Id = c.Id,
+                Content = c.Content!,
+                CreatedAt = c.CreatedAt,
+                UpdatedAt = c.UpdatedAt,
+                UserId = c.UserId,
+                UserName = c.User!.UserName ?? "Anonymous",
+                ProductId = c.ProductId
+            })
+            .OrderByDescending(c => c.CreatedAt)
+            .ToListAsync();
+
+        return Ok(comments);
+    }
+
+    // Отримати всі коментарі користувача
+    // GET: /api/comments/user/{userId}
+    [HttpGet("comments/user/{userId}")]
+    public async Task<ActionResult<IEnumerable<CommentDto>>> GetCommentsByUser(string userId)
+    {
+        if (!await _context.Users.AnyAsync(u => u.Id == userId))
         {
-            var applicationDbContext = _context.Comments.Include(c => c.Product).Include(c => c.User);
-            return View(await applicationDbContext.ToListAsync());
+            return NotFound($"User with id {userId} not found.");
         }
 
-        // GET: Comment/Details/5
-        public async Task<IActionResult> Details(int? id)
+        var comments = await _context.Comments
+            .Where(c => c.UserId == userId)
+            .Include(c => c.User)
+            .Select(c => new CommentDto
+            {
+                Id = c.Id,
+                Content = c.Content!,
+                CreatedAt = c.CreatedAt,
+                UpdatedAt = c.UpdatedAt,
+                UserId = c.UserId,
+                UserName = c.User!.UserName ?? "Anonymous",
+                ProductId = c.ProductId
+            })
+            .OrderByDescending(c => c.CreatedAt)
+            .ToListAsync();
+
+        return Ok(comments);
+    }
+
+    // Створити новий коментар
+    // POST: /api/products/{productId}/comments
+    [HttpPost("products/{productId:int}/comments")]
+    [Authorize]
+    public async Task<ActionResult<CommentDto>> AddComment(int productId, [FromBody] CreateCommentDto createDto)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var comment = await _context.Comments
-                .Include(c => c.Product)
-                .Include(c => c.User)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (comment == null)
-            {
-                return NotFound();
-            }
-
-            return View(comment);
+            return Unauthorized();
         }
 
-        // GET: Comment/Create
-        public IActionResult Create()
+        var product = await _context.Products.FindAsync(productId);
+        if (product == null)
         {
-            ViewData["ProductId"] = new SelectList(_context.Products, "Id", "Id");
-            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id");
-            return View();
+            return NotFound($"Product with id {productId} not found.");
         }
 
-        // POST: Comment/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,UserId,ProductId,Content,CreatedAt,UpdatedAt")] Comment comment)
+        var comment = new Comment
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(comment);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["ProductId"] = new SelectList(_context.Products, "Id", "Id", comment.ProductId);
-            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id", comment.UserId);
-            return View(comment);
+            Content = createDto.Content,
+            ProductId = productId,
+            Product = product,
+            UserId = userId,
+            User = null!,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _context.Comments.Add(comment);
+        await _context.SaveChangesAsync();
+
+        // Повертаємо повний DTO з інформацією про користувача
+        var user = await _context.Users.FindAsync(userId);
+        var resultDto = new CommentDto
+        {
+            Id = comment.Id,
+            Content = comment.Content,
+            CreatedAt = comment.CreatedAt,
+            UpdatedAt = comment.UpdatedAt,
+            UserId = comment.UserId,
+            UserName = user?.UserName ?? "Anonymous",
+            ProductId = comment.ProductId
+        };
+
+        return CreatedAtAction(nameof(GetCommentsForProduct), new { productId = comment.ProductId }, resultDto);
+    }
+
+    // Оновити існуючий коментар
+    // PUT: /api/comments/{commentId}
+    [HttpPut("comments/{commentId:int}")]
+    [Authorize]
+    public async Task<IActionResult> UpdateComment(int commentId, [FromBody] UpdateCommentDto updateDto)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var isAdmin = User.IsInRole("Admin");
+
+        var comment = await _context.Comments.FindAsync(commentId);
+
+        if (comment == null)
+        {
+            return NotFound();
         }
 
-        // GET: Comment/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        // Перевірка: коментар належить користувачу АБО користувач є адміном
+        if (comment.UserId != userId && !isAdmin)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var comment = await _context.Comments.FindAsync(id);
-            if (comment == null)
-            {
-                return NotFound();
-            }
-            ViewData["ProductId"] = new SelectList(_context.Products, "Id", "Id", comment.ProductId);
-            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id", comment.UserId);
-            return View(comment);
+            return Forbid(); // 403 Forbidden - користувач аутентифікований, але не має прав
         }
 
-        // POST: Comment/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,UserId,ProductId,Content,CreatedAt,UpdatedAt")] Comment comment)
+        comment.Content = updateDto.Content;
+        comment.UpdatedAt = DateTime.UtcNow;
+
+        _context.Entry(comment).State = EntityState.Modified;
+
+        try
         {
-            if (id != comment.Id)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(comment);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!CommentExists(comment.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["ProductId"] = new SelectList(_context.Products, "Id", "Id", comment.ProductId);
-            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id", comment.UserId);
-            return View(comment);
-        }
-
-        // GET: Comment/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var comment = await _context.Comments
-                .Include(c => c.Product)
-                .Include(c => c.User)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (comment == null)
-            {
-                return NotFound();
-            }
-
-            return View(comment);
-        }
-
-        // POST: Comment/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var comment = await _context.Comments.FindAsync(id);
-            if (comment != null)
-            {
-                _context.Comments.Remove(comment);
-            }
-
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!_context.Comments.Any(e => e.Id == commentId))
+            {
+                return NotFound();
+            }
+            else
+            {
+                throw;
+            }
         }
 
-        private bool CommentExists(int id)
+        return NoContent(); // 204 No Content - успішне оновлення
+    }
+
+    // Видалити коментар
+    // DELETE: /api/comments/{commentId}
+    [HttpDelete("comments/{commentId:int}")]
+    [Authorize]
+    public async Task<IActionResult> DeleteComment(int commentId)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var isAdmin = User.IsInRole("Admin");
+
+        var comment = await _context.Comments.FindAsync(commentId);
+        if (comment == null)
         {
-            return _context.Comments.Any(e => e.Id == id);
+            return NotFound();
         }
+
+        // Перевірка: коментар належить користувачу АБО користувач є адміном
+        if (comment.UserId != userId && !isAdmin)
+        {
+            return Forbid();
+        }
+
+        _context.Comments.Remove(comment);
+        await _context.SaveChangesAsync();
+
+        return NoContent(); // 204 No Content - успішне видалення
     }
 }
+

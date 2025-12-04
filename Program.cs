@@ -10,6 +10,7 @@ using BoardGamesStore.Services.Settings;
 using Microsoft.Extensions.ObjectPool;
 using MailKit.Net.Smtp;
 using Microsoft.Extensions.Options;
+using BoardGamesStore.Models.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +18,8 @@ builder.Services.Configure<JwtSettings>(
 	builder.Configuration.GetSection("JWT"));
 builder.Services.Configure<SmtpSettings>(
 	builder.Configuration.GetSection("Smtp"));
+builder.Services.Configure<PaymentSettings>(
+	builder.Configuration.GetSection("LiqPay"));
 
 builder.Services.AddCors(options =>
 {
@@ -67,10 +70,10 @@ builder.Services.AddAuthentication(options =>
 	options.RequireHttpsMetadata = false;
 	options.TokenValidationParameters = new TokenValidationParameters
 	{
-		//ValidateIssuer = true,
-		//ValidateAudience = true,
+		ValidateIssuer = true,
+		ValidateAudience = true,
 		ValidateLifetime = true,
-		ValidateIssuerSigningKey = true,
+		ValidateIssuerSigningKey = false,
 
 		ValidIssuer = issuer,
 		ValidAudience = audience,
@@ -79,9 +82,13 @@ builder.Services.AddAuthentication(options =>
 	};
 });
 
-builder.Services.AddAuthorizationBuilder()
-	.AddPolicy("AdminOnly", policy =>
-			policy.RequireRole("Admin"));
+builder.Services.AddAuthorization();
+
+//options =>
+// {
+// 	options.AddPolicy("AdminOnly", policy =>
+// 			policy.RequireRole("Admin"));
+// }
 
 builder.Services.AddControllersWithViews();
 
@@ -103,18 +110,23 @@ builder.Services.AddSingleton(serviceProvider =>
 	};
 	return provider.Create(policy);
 });
-
-builder.Services.AddScoped(typeof(IGenericService<>), typeof(GenericService<>));
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+// builder.Services.AddScoped(typeof(IGenericService<>), typeof(GenericService<>));
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddScoped<ICartService, CartService>();
-builder.Services.AddScoped<ICartItemService, CartItemService>();
+//builder.Services.AddScoped<ICartItemService, CartService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
-builder.Services.AddScoped<IOrderItemService, OrderItemService>();
+//builder.Services.AddScoped<IOrderItemService, OrderItemService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IProductReportService, ProductReportService>();
+builder.Services.AddScoped<IWishlistService, WishlistService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+
+builder.Services.AddLogging(configure => configure.AddConsole());
+builder.Services.AddHostedService<ProductRatingRefreshService>();
 
 builder.Services.AddRazorPages();
 
@@ -164,7 +176,7 @@ else
 	app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseCors("AllowAll");

@@ -3,7 +3,9 @@ using System.Security.Claims;
 using System.Text;
 using BoardGamesStore.Data;
 using BoardGamesStore.Models;
+using BoardGamesStore.Models.Entities;
 using BoardGamesStore.Services.Settings;
+using FluentResults;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -12,21 +14,14 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace BoardGamesStore.Services;
 
-public class TokenService : ITokenService
+public class TokenService(
+    UserManager<User> userManager,
+    IOptions<JwtSettings> jwtSettings,
+    ApplicationDbContext context) : ITokenService
 {
-  private readonly UserManager<User> _userManager;
-  private readonly JwtSettings _jwtSettingsn;
-  private readonly ApplicationDbContext _context;
-
-  public TokenService(
-      UserManager<User> userManager,
-      IOptions<JwtSettings> jwtSettingsn,
-      ApplicationDbContext context)
-  {
-    _userManager = userManager;
-    _jwtSettingsn = jwtSettingsn.Value;
-    _context = context;
-  }
+  private readonly UserManager<User> _userManager = userManager;
+  private readonly JwtSettings _jwtSettings = jwtSettings.Value;
+  private readonly ApplicationDbContext _context = context;
 
   public async Task<string> GenerateJwtTokenAsync(User user)
   {
@@ -38,15 +33,15 @@ public class TokenService : ITokenService
         new(JwtRegisteredClaimNames.Email, user.Email!),
         new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
     };
-    authClaims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
+    authClaims.AddRange(userRoles.Select(role => new Claim("role", role)));
 
-    var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettingsn.Secret));
+    var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
 
     var token = new SecurityTokenDescriptor
     {
-      Issuer = _jwtSettingsn.Issuer,
-      Audience = _jwtSettingsn.Audience,
-      Expires = DateTime.UtcNow.AddMinutes(Convert.ToDouble(_jwtSettingsn.TokenExpirationMinutes)),
+      Issuer = _jwtSettings.Issuer,
+      Audience = _jwtSettings.Audience,
+      Expires = DateTime.UtcNow.AddMinutes(Convert.ToDouble(_jwtSettings.TokenExpirationMinutes)),
       Subject = new ClaimsIdentity(authClaims),
       SigningCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256)
     };
@@ -75,21 +70,22 @@ public class TokenService : ITokenService
     return newRefreshTokenEntity.Token;
   }
 
-  public async Task<(string AccessToken, string RefreshToken)> RefreshTokensAsync(string refreshToken)
+  public async Task<Result<(string AccessToken, string RefreshToken)>> RefreshTokensAsync(string refreshToken)
   {
     var refreshTokenEntity = await _context.RefreshTokens.Include(rt => rt.User)
         .FirstOrDefaultAsync(rt => rt.Token == refreshToken && !rt.Revoked.HasValue);
 
     if (refreshTokenEntity == null || refreshTokenEntity.IsExpired || refreshTokenEntity.User == null)
     {
-      throw new SecurityTokenException("Invalid refresh token");
+      return Result.Fail<(string AccessToken, string RefreshToken)>("Invalid refresh token");
     }
 
     var newAccessToken = await GenerateJwtTokenAsync(refreshTokenEntity.User);
     var newRefreshToken = await GenerateRefreshTokenAsync(refreshTokenEntity.User, refreshTokenEntity);
 
     refreshTokenEntity.Revoked = DateTime.UtcNow;
+    await _context.SaveChangesAsync();
 
-    return (newAccessToken, newRefreshToken);
+    return Result.Ok((newAccessToken, newRefreshToken));
   }
 }

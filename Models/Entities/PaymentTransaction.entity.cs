@@ -1,7 +1,7 @@
 
 using System.ComponentModel.DataAnnotations;
 
-namespace BoardGamesStore.Models;
+namespace BoardGamesStore.Models.Entities;
 
 public class PaymentTransaction
 {

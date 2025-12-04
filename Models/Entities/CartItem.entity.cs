@@ -1,14 +1,14 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace BoardGamesStore.Models;
+namespace BoardGamesStore.Models.Entities;
 
 public class CartItem
 {
   [Key]
   public int Id { get; set; }
 
-  public int CartId { get; set; }
-  public required Cart Cart { get; set; }
+  public required string UserId { get; set; }
+  public required User User { get; set; }
 
   public int ProductId { get; set; }
   public required Product Product { get; set; }

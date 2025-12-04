@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+  <meta charset="UTF-8">
+  <title>LiqPay Test</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 50px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+    }
+
+    button {
+      padding: 15px 30px;
+      background: #76c04e;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>Ручний тест LiqPay</h2>
+  <p>Вставте сюди дані, які ви отримали з Postman:</p>
+
+  <form method="POST" action="https://www.liqpay.ua/api/3/checkout" accept-charset="utf-8" target="_blank">
+
+    <label>Data:</label>
+    <input type="text" name="data" placeholder="Вставте сюди рядок data з Postman" required />
+
+    <label>Signature:</label>
+    <input type="text" name="signature" placeholder="Вставте сюди рядок signature з Postman" required />
+
+    <button type="submit">Перейти до оплати</button>
+  </form>
+
+</body>
+
+</html>

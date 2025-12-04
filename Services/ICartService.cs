@@ -1,14 +1,16 @@
 using BoardGamesStore.Models;
+using BoardGamesStore.Models.Entities;
+using FluentResults;
 
-namespace BoardGamesStore.Services
+namespace BoardGamesStore.Services;
+
+public interface ICartService
 {
-    public interface ICartService
-    {
-        Task<List<Cart>> GetAllAsync(CancellationToken ct = default);
-        Task<Cart?> GetByIdAsync(int id, CancellationToken ct = default);
-        Task<Cart> CreateAsync(string userId, DateTime? createdAt = null, CancellationToken ct = default); // string!
-        Task<bool> UpdateAsync(Cart cart, CancellationToken ct = default);
-        Task<bool> DeleteAsync(int id, CancellationToken ct = default);
-        Task<bool> ExistsAsync(int id, CancellationToken ct = default);
-    }
+  Task<PagedResult<UserCartDto>> GetUsersWithCartsAsync(int pageNumber, int pageSize, CancellationToken ct = default);
+  Task<UserCartDto?> GetByUserIdAsync(string userId, CancellationToken ct = default);
+  Task<Result<CartItem>> AddItemAsync(string userId, int productId, int quantity, CancellationToken ct = default);
+  Task<Result> UpdateItemQuantityAsync(string userId, int productId, int quantity, CancellationToken ct = default);
+  Task<Result> RemoveItemAsync(string userId, int productId, CancellationToken ct = default);
+  Task<Result> ClearAsync(string userId, CancellationToken ct = default);
+  Task<int> GetItemsCountAsync(string userId, CancellationToken ct = default);
 }

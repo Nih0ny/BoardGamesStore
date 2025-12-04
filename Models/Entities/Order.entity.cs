@@ -1,11 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace BoardGamesStore.Models;
+namespace BoardGamesStore.Models.Entities;
 
 public class Order
 {
   [Key]
-  public int Id { get; set; }
+  public int Id { get; private set; }
 
   public required string UserId { get; set; }
   public required User User { get; set; }
@@ -14,6 +14,7 @@ public class Order
   public required OrderStatus Status { get; set; }
 
   public decimal Total { get; set; }
+  public decimal BonusTotal { get; set; }
   public DateTime CreatedAt { get; set; }
   public DateTime UpdatedAt { get; set; }
 

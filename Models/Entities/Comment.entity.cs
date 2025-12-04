@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace BoardGamesStore.Models;
+namespace BoardGamesStore.Models.Entities;
 
 public class Comment
 {
@@ -8,10 +8,10 @@ public class Comment
   public int Id { get; set; }
 
   public required string UserId { get; set; }
-  public required User User { get; set; }
+  public User? User { get; set; }
 
   public int ProductId { get; set; }
-  public required Product Product { get; set; }
+  public Product? Product { get; set; }
 
   public string? Content { get; set; }
   public DateTime CreatedAt { get; set; }

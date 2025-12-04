@@ -22,7 +22,7 @@ namespace BoardGamesStore.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("BoardGamesStore.Models.BonusTransaction", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.BonusTransaction", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -56,33 +56,7 @@ namespace BoardGamesStore.Migrations
                     b.ToTable("bonus_transactions", (string)null);
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.Cart", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("carts", (string)null);
-                });
-
-            modelBuilder.Entity("BoardGamesStore.Models.CartItem", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.CartItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -93,25 +67,26 @@ namespace BoardGamesStore.Migrations
                     b.Property<DateTime>("AddedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("CartId")
-                        .HasColumnType("integer");
-
                     b.Property<int>("ProductId")
                         .HasColumnType("integer");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("CartId");
-
                     b.HasIndex("ProductId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("cart_items", (string)null);
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.Comment", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.Comment", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -144,7 +119,7 @@ namespace BoardGamesStore.Migrations
                     b.ToTable("comments", (string)null);
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.CommentReport", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.CommentReport", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -178,7 +153,7 @@ namespace BoardGamesStore.Migrations
                     b.ToTable("comment_reports", (string)null);
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.Evaluation", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.Evaluation", b =>
                 {
                     b.Property<string>("UserId")
                         .HasColumnType("text");
@@ -202,13 +177,16 @@ namespace BoardGamesStore.Migrations
                     b.ToTable("evaluations", (string)null);
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.Order", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.Order", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("BonusTotal")
+                        .HasColumnType("numeric");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -235,7 +213,7 @@ namespace BoardGamesStore.Migrations
                     b.ToTable("orders", (string)null);
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.OrderItem", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.OrderItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -264,7 +242,7 @@ namespace BoardGamesStore.Migrations
                     b.ToTable("order_items", (string)null);
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.OrderStatus", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.OrderStatus", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -272,7 +250,7 @@ namespace BoardGamesStore.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Status")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -282,7 +260,7 @@ namespace BoardGamesStore.Migrations
                     b.ToTable("order_statuses", (string)null);
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.PaymentTransaction", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.PaymentTransaction", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -315,7 +293,7 @@ namespace BoardGamesStore.Migrations
                     b.ToTable("payment_transactions", (string)null);
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.Product", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.Product", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -337,6 +315,9 @@ namespace BoardGamesStore.Migrations
 
                     b.Property<string>("ImageUrl")
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<decimal>("MaxBonusPaymentPercent")
                         .HasColumnType("decimal(5,2)");
@@ -360,7 +341,7 @@ namespace BoardGamesStore.Migrations
                     b.ToTable("products", (string)null);
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.ProductReport", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.ProductReport", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -394,7 +375,7 @@ namespace BoardGamesStore.Migrations
                     b.ToTable("product_reports", (string)null);
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.RefreshToken", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.RefreshToken", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -429,7 +410,7 @@ namespace BoardGamesStore.Migrations
                     b.ToTable("refresh_tokens", (string)null);
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.SimilarProduct", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.SimilarProduct", b =>
                 {
                     b.Property<int>("ProductId")
                         .HasColumnType("integer");
@@ -447,7 +428,7 @@ namespace BoardGamesStore.Migrations
                     b.ToTable("similar_products", (string)null);
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.User", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.User", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("text");
@@ -470,6 +451,9 @@ namespace BoardGamesStore.Migrations
                         .HasColumnType("character varying(256)");
 
                     b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("LockoutEnabled")
@@ -520,7 +504,7 @@ namespace BoardGamesStore.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.Wishlist", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.WishlistItem", b =>
                 {
                     b.Property<string>("UserId")
                         .HasColumnType("text");
@@ -539,6 +523,29 @@ namespace BoardGamesStore.Migrations
                     b.HasIndex("ProductId");
 
                     b.ToTable("wishlists", (string)null);
+                });
+
+            modelBuilder.Entity("BoardGamesStore.Models.Views.ProductRatingSummary", b =>
+                {
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<double>("AverageRating")
+                        .HasColumnType("double precision");
+
+                    b.Property<int?>("ProductId1")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ReviewsCount")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ProductId");
+
+                    b.HasIndex("ProductId1");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("product_stats_mv", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -673,14 +680,14 @@ namespace BoardGamesStore.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.BonusTransaction", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.BonusTransaction", b =>
                 {
-                    b.HasOne("BoardGamesStore.Models.Order", "Order")
+                    b.HasOne("BoardGamesStore.Models.Entities.Order", "Order")
                         .WithMany("BonusTransactions")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("BoardGamesStore.Models.User", "User")
+                    b.HasOne("BoardGamesStore.Models.Entities.User", "User")
                         .WithMany("BonusTransactions")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -691,45 +698,34 @@ namespace BoardGamesStore.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.Cart", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.CartItem", b =>
                 {
-                    b.HasOne("BoardGamesStore.Models.User", "User")
-                        .WithOne("Cart")
-                        .HasForeignKey("BoardGamesStore.Models.Cart", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("BoardGamesStore.Models.CartItem", b =>
-                {
-                    b.HasOne("BoardGamesStore.Models.Cart", "Cart")
-                        .WithMany("Items")
-                        .HasForeignKey("CartId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BoardGamesStore.Models.Product", "Product")
+                    b.HasOne("BoardGamesStore.Models.Entities.Product", "Product")
                         .WithMany("CartItems")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Cart");
+                    b.HasOne("BoardGamesStore.Models.Entities.User", "User")
+                        .WithMany("CartItems")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Product");
+
+                    b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.Comment", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.Comment", b =>
                 {
-                    b.HasOne("BoardGamesStore.Models.Product", "Product")
+                    b.HasOne("BoardGamesStore.Models.Entities.Product", "Product")
                         .WithMany("Comments")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BoardGamesStore.Models.User", "User")
+                    b.HasOne("BoardGamesStore.Models.Entities.User", "User")
                         .WithMany("Comments")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -740,15 +736,15 @@ namespace BoardGamesStore.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.CommentReport", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.CommentReport", b =>
                 {
-                    b.HasOne("BoardGamesStore.Models.Comment", "Comment")
+                    b.HasOne("BoardGamesStore.Models.Entities.Comment", "Comment")
                         .WithMany("CommentReports")
                         .HasForeignKey("CommentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BoardGamesStore.Models.User", "User")
+                    b.HasOne("BoardGamesStore.Models.Entities.User", "User")
                         .WithMany("CommentReports")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -759,15 +755,15 @@ namespace BoardGamesStore.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.Evaluation", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.Evaluation", b =>
                 {
-                    b.HasOne("BoardGamesStore.Models.Product", "Product")
+                    b.HasOne("BoardGamesStore.Models.Entities.Product", "Product")
                         .WithMany("Evaluations")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BoardGamesStore.Models.User", "User")
+                    b.HasOne("BoardGamesStore.Models.Entities.User", "User")
                         .WithMany("Evaluations")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -778,15 +774,15 @@ namespace BoardGamesStore.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.Order", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.Order", b =>
                 {
-                    b.HasOne("BoardGamesStore.Models.OrderStatus", "Status")
+                    b.HasOne("BoardGamesStore.Models.Entities.OrderStatus", "Status")
                         .WithMany("Orders")
                         .HasForeignKey("StatusId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("BoardGamesStore.Models.User", "User")
+                    b.HasOne("BoardGamesStore.Models.Entities.User", "User")
                         .WithMany("Orders")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -797,15 +793,15 @@ namespace BoardGamesStore.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.OrderItem", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.OrderItem", b =>
                 {
-                    b.HasOne("BoardGamesStore.Models.Order", "Order")
+                    b.HasOne("BoardGamesStore.Models.Entities.Order", "Order")
                         .WithMany("OrderItems")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BoardGamesStore.Models.Product", "Product")
+                    b.HasOne("BoardGamesStore.Models.Entities.Product", "Product")
                         .WithMany("OrderItems")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -816,9 +812,9 @@ namespace BoardGamesStore.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.PaymentTransaction", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.PaymentTransaction", b =>
                 {
-                    b.HasOne("BoardGamesStore.Models.Order", "Order")
+                    b.HasOne("BoardGamesStore.Models.Entities.Order", "Order")
                         .WithMany("PaymentTransactions")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -827,15 +823,15 @@ namespace BoardGamesStore.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.ProductReport", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.ProductReport", b =>
                 {
-                    b.HasOne("BoardGamesStore.Models.Product", "Product")
+                    b.HasOne("BoardGamesStore.Models.Entities.Product", "Product")
                         .WithMany("ProductReports")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BoardGamesStore.Models.User", "User")
+                    b.HasOne("BoardGamesStore.Models.Entities.User", "User")
                         .WithMany("ProductReports")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -846,9 +842,9 @@ namespace BoardGamesStore.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.RefreshToken", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.RefreshToken", b =>
                 {
-                    b.HasOne("BoardGamesStore.Models.User", "User")
+                    b.HasOne("BoardGamesStore.Models.Entities.User", "User")
                         .WithMany("RefreshTokens")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -857,15 +853,15 @@ namespace BoardGamesStore.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.SimilarProduct", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.SimilarProduct", b =>
                 {
-                    b.HasOne("BoardGamesStore.Models.Product", "Product")
+                    b.HasOne("BoardGamesStore.Models.Entities.Product", "Product")
                         .WithMany("SimilarProducts")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BoardGamesStore.Models.Product", "SimilarTo")
+                    b.HasOne("BoardGamesStore.Models.Entities.Product", "SimilarTo")
                         .WithMany("RelatedToProducts")
                         .HasForeignKey("SimilarProductId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -876,16 +872,16 @@ namespace BoardGamesStore.Migrations
                     b.Navigation("SimilarTo");
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.Wishlist", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.WishlistItem", b =>
                 {
-                    b.HasOne("BoardGamesStore.Models.Product", "Product")
-                        .WithMany("Wishlists")
+                    b.HasOne("BoardGamesStore.Models.Entities.Product", "Product")
+                        .WithMany("WishlistItems")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BoardGamesStore.Models.User", "User")
-                        .WithMany("Wishlists")
+                    b.HasOne("BoardGamesStore.Models.Entities.User", "User")
+                        .WithMany("WishlistItems")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -893,6 +889,21 @@ namespace BoardGamesStore.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BoardGamesStore.Models.Views.ProductRatingSummary", b =>
+                {
+                    b.HasOne("BoardGamesStore.Models.Entities.Product", null)
+                        .WithOne("RatingSummary")
+                        .HasForeignKey("BoardGamesStore.Models.Views.ProductRatingSummary", "ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BoardGamesStore.Models.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId1");
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -906,7 +917,7 @@ namespace BoardGamesStore.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("BoardGamesStore.Models.User", null)
+                    b.HasOne("BoardGamesStore.Models.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -915,7 +926,7 @@ namespace BoardGamesStore.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("BoardGamesStore.Models.User", null)
+                    b.HasOne("BoardGamesStore.Models.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -930,7 +941,7 @@ namespace BoardGamesStore.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BoardGamesStore.Models.User", null)
+                    b.HasOne("BoardGamesStore.Models.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -939,24 +950,19 @@ namespace BoardGamesStore.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("BoardGamesStore.Models.User", null)
+                    b.HasOne("BoardGamesStore.Models.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.Cart", b =>
-                {
-                    b.Navigation("Items");
-                });
-
-            modelBuilder.Entity("BoardGamesStore.Models.Comment", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.Comment", b =>
                 {
                     b.Navigation("CommentReports");
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.Order", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.Order", b =>
                 {
                     b.Navigation("BonusTransactions");
 
@@ -965,12 +971,12 @@ namespace BoardGamesStore.Migrations
                     b.Navigation("PaymentTransactions");
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.OrderStatus", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.OrderStatus", b =>
                 {
                     b.Navigation("Orders");
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.Product", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.Product", b =>
                 {
                     b.Navigation("CartItems");
 
@@ -982,18 +988,20 @@ namespace BoardGamesStore.Migrations
 
                     b.Navigation("ProductReports");
 
+                    b.Navigation("RatingSummary");
+
                     b.Navigation("RelatedToProducts");
 
                     b.Navigation("SimilarProducts");
 
-                    b.Navigation("Wishlists");
+                    b.Navigation("WishlistItems");
                 });
 
-            modelBuilder.Entity("BoardGamesStore.Models.User", b =>
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.User", b =>
                 {
                     b.Navigation("BonusTransactions");
 
-                    b.Navigation("Cart");
+                    b.Navigation("CartItems");
 
                     b.Navigation("CommentReports");
 
@@ -1007,7 +1015,7 @@ namespace BoardGamesStore.Migrations
 
                     b.Navigation("RefreshTokens");
 
-                    b.Navigation("Wishlists");
+                    b.Navigation("WishlistItems");
                 });
 #pragma warning restore 612, 618
         }

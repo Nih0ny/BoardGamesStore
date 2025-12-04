@@ -5,18 +5,14 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
+namespace BoardGamesStore.Controllers;
+
 [ApiController]
 [Route("api/[controller]")]
-public class AccountController : ControllerBase
+public class AccountController(IAccountService accountService, ITokenService tokenService) : ControllerBase
 {
-  private readonly IAccountService _accountService;
-  private readonly ITokenService _tokenService;
-
-  public AccountController(IAccountService accountService, ITokenService tokenService)
-  {
-    _accountService = accountService;
-    _tokenService = tokenService;
-  }
+  private readonly IAccountService _accountService = accountService;
+  private readonly ITokenService _tokenService = tokenService;
 
   [HttpPost("register")]
   public async Task<IActionResult> Register(RegisterDto registerDto)
@@ -48,23 +44,20 @@ public class AccountController : ControllerBase
   [HttpPost("login")]
   public async Task<IActionResult> Login(LoginDto loginDto)
   {
-    try
+
+    var result = await _accountService.LoginUserAsync(loginDto);
+    if (result.IsFailed) return Unauthorized(new { result.Errors[0].Message });
+
+    var (accessToken, refreshToken) = result.Value;
+    var cookieOptions = new CookieOptions
     {
-      var (accessToken, refreshToken) = await _accountService.LoginUserAsync(loginDto);
-      var cookieOptions = new CookieOptions
-      {
-        HttpOnly = true,
-        Secure = false, // true if using HTTPS
-        SameSite = SameSiteMode.Strict,
-        Expires = DateTime.UtcNow.AddDays(90)
-      };
-      Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
-      return Ok(new { Token = accessToken });
-    }
-    catch (UnauthorizedAccessException e)
-    {
-      return Unauthorized(new { e.Message });
-    }
+      HttpOnly = true,
+      Secure = false, // FIXME: true if using HTTPS
+      SameSite = SameSiteMode.Strict,
+      Expires = DateTime.UtcNow.AddDays(90)
+    };
+    Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+    return Ok(new { Token = accessToken });
   }
 
   [HttpPost("refresh")]
@@ -75,7 +68,14 @@ public class AccountController : ControllerBase
     {
       return Unauthorized(new { Message = "Refresh token is missing." });
     }
-    var (newAccessToken, newRefreshToken) = await _tokenService.RefreshTokensAsync(refreshToken);
+
+    var result = await _tokenService.RefreshTokensAsync(refreshToken);
+    if (result.IsFailed)
+    {
+      return Unauthorized(new { Message = "Invalid refresh token." });
+    }
+    var (newAccessToken, newRefreshToken) = result.Value;
+
     var cookieOptions = new CookieOptions
     {
       HttpOnly = true,
@@ -91,15 +91,14 @@ public class AccountController : ControllerBase
   [HttpPost("change-password")]
   public async Task<IActionResult> ChangePassword(ChangePasswordDto changePasswordDto)
   {
-    var email = User.FindFirstValue(ClaimTypes.Email);
-    if (email == null)
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (userId == null)
     {
       return Unauthorized();
     }
 
-    Console.WriteLine($"Change password request for user: {email}");
-
-    var result = await _accountService.ChangePasswordAsync(email, changePasswordDto);
+    Console.WriteLine($"Change password request for user: {userId}");
+    var result = await _accountService.ChangePasswordAsync(userId, changePasswordDto);
     if (result.Succeeded)
     {
       return Ok(new { Message = "Password changed successfully." });
@@ -128,5 +127,39 @@ public class AccountController : ControllerBase
     }
 
     return BadRequest(result.Errors);
+  }
+
+  [Authorize]
+  [HttpGet("me")]
+  public async Task<IActionResult> GetCurrentUser()
+  {
+
+    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (userId == null)
+    {
+      return Unauthorized();
+    }
+
+    return Ok(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+  }
+
+  // FIXME: Implement account deletion in AccountService
+  [Authorize]
+  [HttpDelete]
+  public async Task<IActionResult> DeleteAccount()
+  {
+    var email = User.FindFirstValue(ClaimTypes.Email);
+    if (email == null)
+    {
+      return Unauthorized();
+    }
+
+    // var result = await _accountService.DeleteAccountAsync(email);
+    // if (result)
+    // {
+    //   return Ok(new { Message = "Account deleted successfully." });
+    // }
+
+    return BadRequest(new { Message = "Failed to delete account." });
   }
 }

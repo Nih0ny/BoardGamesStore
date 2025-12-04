@@ -1,20 +1,16 @@
-﻿using BoardGamesStore.Models;
+﻿using BoardGamesStore.Models.Entities;
+using BoardGamesStore.Models.Views;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace BoardGamesStore.Data;
 
-public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string, IdentityUserClaim<string>, IdentityUserRole<string>, IdentityUserLogin<string>, IdentityRoleClaim<string>, IdentityUserToken<string>>
+public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityDbContext<User, IdentityRole, string, IdentityUserClaim<string>, IdentityUserRole<string>, IdentityUserLogin<string>, IdentityRoleClaim<string>, IdentityUserToken<string>>(options)
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-        : base(options)
-    {
-    }
-
     public DbSet<Product> Products { get; set; }
     public DbSet<Comment> Comments { get; set; }
-    public DbSet<Cart> Carts { get; set; }
+    //public DbSet<Cart> Carts { get; set; }
     public DbSet<CartItem> CartItems { get; set; }
     public DbSet<Order> Orders { get; set; }
     public DbSet<OrderStatus> OrderStatuses { get; set; }
@@ -22,7 +18,7 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string
     public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
     public DbSet<BonusTransaction> BonusTransactions { get; set; }
     public DbSet<SimilarProduct> SimilarProducts { get; set; }
-    public DbSet<Wishlist> Wishlists { get; set; }
+    public DbSet<WishlistItem> WishlistItems { get; set; }
     public DbSet<Evaluation> Evaluations { get; set; }
     public DbSet<ProductReport> ProductReports { get; set; }
     public DbSet<CommentReport> CommentReports { get; set; }
@@ -42,6 +38,15 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string
             entity.Property(p => p.MaxBonusPaymentPercent).HasColumnType("decimal(5,2)");
         });
 
+        modelBuilder.Entity<ProductRatingSummary>(entity =>
+        {
+            entity.ToView("product_stats_mv");
+            entity.HasKey(e => e.ProductId);
+            entity.HasOne<Product>()
+                  .WithOne(p => p.RatingSummary)
+                  .HasForeignKey<ProductRatingSummary>(ps => ps.ProductId);
+        });
+
         modelBuilder.Entity<Comment>(entity =>
         {
             entity.ToTable("comments");
@@ -56,23 +61,23 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<Cart>(entity =>
-        {
-            entity.ToTable("carts");
-            entity.HasKey(c => c.Id);
-            entity.HasOne(c => c.User)
-                .WithOne(u => u.Cart)
-                .HasForeignKey<Cart>(c => c.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
+        // modelBuilder.Entity<Cart>(entity =>
+        // {
+        //     entity.ToTable("carts");
+        //     entity.HasKey(c => c.Id);
+        //     entity.HasOne(c => c.User)
+        //         .WithOne(u => u.Cart)
+        //         .HasForeignKey<Cart>(c => c.UserId)
+        //         .OnDelete(DeleteBehavior.Cascade);
+        // });
 
         modelBuilder.Entity<CartItem>(entity =>
         {
             entity.ToTable("cart_items");
             entity.HasKey(ci => ci.Id);
-            entity.HasOne(ci => ci.Cart)
-                .WithMany(c => c.Items)
-                .HasForeignKey(ci => ci.CartId)
+            entity.HasOne(ci => ci.User)
+                .WithMany(c => c.CartItems)
+                .HasForeignKey(ci => ci.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(ci => ci.Product)
                 .WithMany(p => p.CartItems)
@@ -99,7 +104,7 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string
         {
             entity.ToTable("order_statuses");
             entity.HasKey(os => os.Id);
-            entity.Property(os => os.Status).IsRequired().HasMaxLength(100);
+            entity.Property(os => os.Name).IsRequired().HasMaxLength(100);
         });
 
         modelBuilder.Entity<OrderItem>(entity =>
@@ -157,16 +162,16 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole, string
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<Wishlist>(entity =>
+        modelBuilder.Entity<WishlistItem>(entity =>
         {
             entity.ToTable("wishlists");
             entity.HasKey(w => new { w.UserId, w.ProductId });
             entity.HasOne(w => w.User)
-                .WithMany(u => u.Wishlists)
+                .WithMany(u => u.WishlistItems)
                 .HasForeignKey(w => w.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(w => w.Product)
-                .WithMany(p => p.Wishlists)
+                .WithMany(p => p.WishlistItems)
                 .HasForeignKey(w => w.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
         });

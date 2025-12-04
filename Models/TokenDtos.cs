@@ -1,4 +1,6 @@
-using BoardGamesStore.Models;
+using BoardGamesStore.Models.Entities;
+
+namespace BoardGamesStore.Models;
 
 public class RefreshTokenDto
 {
