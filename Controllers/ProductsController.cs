@@ -12,11 +12,13 @@ public class ProductsController(IProductService products) : ControllerBase
 {
 	private readonly IProductService _products = products;
 
+	public record AllProductBody(int PageNumber = 1, int PageSize = 20);
+
 	[HttpGet]
-	public async Task<IActionResult> GetAll()
+	public async Task<IActionResult> GetAll([FromBody] AllProductBody query)
 	{
 		var ct = HttpContext.RequestAborted;
-		var list = await _products.GetAllAsync(ct: ct);
+		var list = await _products.GetAllAsync(query.PageNumber, query.PageSize, ct);
 		return Ok(list);
 	}
 

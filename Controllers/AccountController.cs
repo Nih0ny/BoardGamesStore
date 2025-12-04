@@ -131,7 +131,7 @@ public class AccountController(IAccountService accountService, ITokenService tok
 
   [Authorize]
   [HttpGet("me")]
-  public async Task<IActionResult> GetCurrentUser()
+  public IActionResult GetCurrentUser()
   {
 
     var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

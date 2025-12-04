@@ -15,31 +15,21 @@ public class ProductService(ApplicationDbContext db) : IProductService
     int pageSize,
     CancellationToken ct = default)
   {
-    // Починаємо будувати запит
     IQueryable<Product> query = _db.Products.AsNoTracking();
 
-    // 1. Підвантажуємо SimilarProducts
     query = query.Include(p => p.SimilarProducts);
+    query = query.Include(p => p.Comments!.OrderByDescending(c => c.CreatedAt).Take(10));
 
-    // 2. Підвантажуємо лише 10 останніх коментарів (Filtered Include, доступно з EF Core 5+)
-    // Припускаю, що у Comment є поле CreatedAt, інакше прибери OrderBy
-    query = query.Include(p => p.Comments.OrderByDescending(c => c.CreatedAt).Take(10));
-
-    // 3. Підвантажуємо дані з View (EvaluationSummary)
-    // Тобі треба додати нову навігаційну властивість у Product, див. пояснення нижче
     query = query.Include(p => p.RatingSummary);
 
-    // 4. Загальна кількість (для пагінації рахуємо ДО Skip/Take)
     var totalCount = await query.CountAsync(ct);
 
-    // 5. Отримуємо дані сторінки
     var items = await query
-        .OrderByDescending(p => p.CreatedAt) // Сортуємо (наприклад, нові зверху)
+        .OrderByDescending(p => p.CreatedAt)
         .Skip((pageNumber - 1) * pageSize)
         .Take(pageSize)
         .ToListAsync(ct);
 
-    // 6. Повертаємо результат
     return new PagedResult<Product>
     {
       Items = items,
