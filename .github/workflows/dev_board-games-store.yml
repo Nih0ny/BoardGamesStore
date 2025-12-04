@@ -56,10 +56,7 @@ jobs:
         run: |
           echo "Building and starting container..."
           
-          docker compose up --build -d --remove-orphans
-          
-          echo "Cleaning up unused images..."
-          docker image prune -f
+          sudo systemctl restart webapp.service
           
 
 
