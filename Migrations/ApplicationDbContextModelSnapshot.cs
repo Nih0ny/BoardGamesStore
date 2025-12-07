@@ -533,7 +533,7 @@ namespace BoardGamesStore.Migrations
                     b.Property<double>("AverageRating")
                         .HasColumnType("double precision");
 
-                    b.Property<int?>("ProductId1")
+                    b.Property<int?>("ProductId")
                         .HasColumnType("integer");
 
                     b.Property<int>("ReviewsCount")
@@ -541,7 +541,7 @@ namespace BoardGamesStore.Migrations
 
                     b.HasKey("ProductId");
 
-                    b.HasIndex("ProductId1");
+                    b.HasIndex("ProductId");
 
                     b.ToTable((string)null);
 
@@ -901,7 +901,7 @@ namespace BoardGamesStore.Migrations
 
                     b.HasOne("BoardGamesStore.Models.Entities.Product", "Product")
                         .WithMany()
-                        .HasForeignKey("ProductId1");
+                        .HasForeignKey("ProductId");
 
                     b.Navigation("Product");
                 });
