@@ -8,10 +8,10 @@ public class Evaluation
   public int Id { get; set; }
 
   public required string UserId { get; set; }
-  public required User User { get; set; }
+  public User? User { get; set; }
 
   public int ProductId { get; set; }
-  public required Product Product { get; set; }
+  public Product? Product { get; set; }
 
   public int Rating { get; set; }
   public DateTime CreatedAt { get; set; }

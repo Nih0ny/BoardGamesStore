@@ -121,7 +121,7 @@ public class OrderService(ApplicationDbContext context, ICartService cartService
     };
   }
 
-  public async Task<Result<Order>> CreateAsync(string userId, int statusId, CancellationToken ct = default)
+  public async Task<Result<OrderDto>> CreateAsync(string userId, int statusId, CancellationToken ct = default)
   {
     var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
     if (user == null) return Result.Fail($"User '{userId}' not found.");
@@ -202,7 +202,22 @@ public class OrderService(ApplicationDbContext context, ICartService cartService
       return Result.Fail("Error creating order");
     }
 
-    return order;
+    return Result.Ok(new OrderDto
+    {
+      Id = order.Id,
+      UserEmail = user.Email!,
+      StatusName = status.Name,
+      Total = order.Total,
+      BonusTotal = order.BonusTotal,
+      CreatedAt = order.CreatedAt,
+      Items = [.. order.OrderItems!.Select(oi => new OrderItemDto
+      {
+        ProductId = oi.ProductId,
+        ProductName = oi.Product.Name,
+        Quantity = oi.Quantity,
+        Price = oi.Price
+      })]
+    });
   }
 
   public async Task<Result> ReturnToCartAsync(int orderId, CancellationToken ct = default)

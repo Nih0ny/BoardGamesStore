@@ -22,7 +22,7 @@ public interface IOrderService
     int pageSize,
     CancellationToken ct = default);
 
-  Task<Result<Order>> CreateAsync(string userId, int statusId, CancellationToken ct = default);
+  Task<Result<OrderDto>> CreateAsync(string userId, int statusId, CancellationToken ct = default);
 
   Task<Result> ReturnToCartAsync(int orderId, CancellationToken ct = default);
 

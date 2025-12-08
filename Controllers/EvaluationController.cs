@@ -8,19 +8,35 @@ using Microsoft.EntityFrameworkCore;
 using BoardGamesStore.Data;
 using BoardGamesStore.Models;
 using Microsoft.AspNetCore.Authorization;
+using BoardGamesStore.Services;
 
 namespace BoardGamesStore.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class EvaluationController : Controller
+public class EvaluationController(IEvaluationService evaluationService) : Controller
 {
-  [Authorize]
-  [HttpPut("{productId:int}")]
-  public async Task<IActionResult> EvaluateProduct(int productId, [FromBody] int score)
-  {
-    // Логіка оцінки продукту користувачем
-    return Ok();
-  }
+  private readonly IEvaluationService _evaluationService = evaluationService;
+
+  // [Authorize]
+  // [HttpPut("{productId}/evaluation")]
+  // public async Task<IActionResult> RateProduct(int productId, [FromBody] RateProductDto dto)
+  // {
+  //   // dto.Score валідується автоматично через [Range(1,5)]
+  //   var userId = GetCurrentUserId();
+  //   var result = await _service.UpsertEvaluationAsync(productId, userId, dto.Score);
+  //   // ... обробка результату
+  //   return Ok();
+  // }
+
+  // // DELETE: api/products/10/evaluation
+  // [HttpDelete("{productId}/evaluation")]
+  // public async Task<IActionResult> RemoveRating(int productId)
+  // {
+  //   var userId = GetCurrentUserId();
+  //   var result = await _service.RemoveEvaluationAsync(productId, userId);
+  //   // ... обробка результату
+  //   return NoContent();
+  // }
 }
 

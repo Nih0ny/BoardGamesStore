@@ -121,7 +121,7 @@ builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 //builder.Services.AddScoped<IOrderItemService, OrderItemService>();
 builder.Services.AddScoped<IProductService, ProductService>();
-builder.Services.AddScoped<IProductReportService, ProductReportService>();
+//builder.Services.AddScoped<IProductReportService, ProductReportService>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 

@@ -10,7 +10,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 {
     public DbSet<Product> Products { get; set; }
     public DbSet<Comment> Comments { get; set; }
-    //public DbSet<Cart> Carts { get; set; }
     public DbSet<CartItem> CartItems { get; set; }
     public DbSet<Order> Orders { get; set; }
     public DbSet<OrderStatus> OrderStatuses { get; set; }
@@ -36,15 +35,14 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.Property(p => p.Price).HasColumnType("decimal(18,2)");
             entity.Property(p => p.BonusRate).HasColumnType("decimal(5,2)");
             entity.Property(p => p.MaxBonusPaymentPercent).HasColumnType("decimal(5,2)");
+            entity.HasOne(p => p.RatingSummary)
+                .WithOne(ps => ps.Product)
+                .HasForeignKey<ProductRatingSummary>(ps => ps.ProductId);
         });
 
         modelBuilder.Entity<ProductRatingSummary>(entity =>
         {
             entity.ToView("product_stats_mv");
-            entity.HasKey(e => e.ProductId);
-            entity.HasOne<Product>()
-                  .WithOne(p => p.RatingSummary)
-                  .HasForeignKey<ProductRatingSummary>(ps => ps.ProductId);
         });
 
         modelBuilder.Entity<Comment>(entity =>
@@ -60,16 +58,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .HasForeignKey(c => c.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
-
-        // modelBuilder.Entity<Cart>(entity =>
-        // {
-        //     entity.ToTable("carts");
-        //     entity.HasKey(c => c.Id);
-        //     entity.HasOne(c => c.User)
-        //         .WithOne(u => u.Cart)
-        //         .HasForeignKey<Cart>(c => c.UserId)
-        //         .OnDelete(DeleteBehavior.Cascade);
-        // });
 
         modelBuilder.Entity<CartItem>(entity =>
         {

@@ -20,7 +20,7 @@ public class ProductService(ApplicationDbContext db) : IProductService
     query = query.Include(p => p.SimilarProducts);
     query = query.Include(p => p.Comments!.OrderByDescending(c => c.CreatedAt).Take(10));
 
-    query = query.Include(p => p.RatingSummary);
+    //query = query.Include(p => p.RatingSummary);
 
     var totalCount = await query.CountAsync(ct);
 

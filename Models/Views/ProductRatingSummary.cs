@@ -6,7 +6,7 @@ namespace BoardGamesStore.Models.Views;
 
 public class ProductRatingSummary
 {
-  [Key, ForeignKey("Product")]
+  [Key]
   public int ProductId { get; set; }
   public double AverageRating { get; set; }
   public int ReviewsCount { get; set; }

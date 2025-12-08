@@ -12,14 +12,11 @@ public class ProductsController(IProductService products) : ControllerBase
 {
 	private readonly IProductService _products = products;
 
-	public record AllProductBody(int PageNumber = 1, int PageSize = 20);
-
 	[HttpGet]
-	public async Task<IActionResult> GetAll([FromBody] AllProductBody query)
+	public async Task<IActionResult> GetAll(int pageNumber = 1, int pageSize = 20)
 	{
-		var ct = HttpContext.RequestAborted;
-		var list = await _products.GetAllAsync(query.PageNumber, query.PageSize, ct);
-		return Ok(list);
+		var result = await _products.GetAllAsync(pageNumber, pageSize, HttpContext.RequestAborted);
+		return Ok(result);
 	}
 
 	[HttpGet("{id:int}")]
@@ -31,7 +28,7 @@ public class ProductsController(IProductService products) : ControllerBase
 	}
 
 	[HttpPost]
-	[Authorize(AuthenticationSchemes = "Bearer", Roles = "Admin")]
+	[Authorize(Roles = "Admin")]
 	public async Task<IActionResult> Create([FromBody] Product dto)
 	{
 		var ct = HttpContext.RequestAborted;
