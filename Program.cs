@@ -77,8 +77,8 @@ builder.Services.AddAuthentication(options =>
 	options.RequireHttpsMetadata = false;
 	options.TokenValidationParameters = new TokenValidationParameters
 	{
-		ValidateIssuer = false, // FIXME: true for production
-		ValidateAudience = false, // FIXME: true for production
+		ValidateIssuer = true,
+		ValidateAudience = true,
 		ValidateLifetime = true,
 		ValidateIssuerSigningKey = false,
 
