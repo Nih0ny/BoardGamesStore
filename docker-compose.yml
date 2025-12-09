@@ -3,7 +3,7 @@ version: '3.8'
 services:
 
   db:
-    image: pgvector/pgvector:pg16
+    image: pgvector/pgvector:pg14
     environment:
       POSTGRES_DB: board_games_store
       POSTGRES_USER: board_games_store_user
