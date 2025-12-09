@@ -21,6 +21,8 @@ public class Product
   public DateTime UpdatedAt { get; set; }
   public bool IsDeleted { get; set; }
 
+  public float[]? Embedding { get; set; }
+
   public ProductRatingSummary? RatingSummary { get; set; }
   public ICollection<Comment>? Comments { get; set; }
   public ICollection<CartItem>? CartItems { get; set; }
