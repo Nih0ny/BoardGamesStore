@@ -28,6 +28,7 @@ public class TokenService(
   {
     var userRoles = await _userManager.GetRolesAsync(user);
 
+    Console.WriteLine("JWT Settings: ", _jwtSettings);
     var authClaims = new List<Claim>
     {
         new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
@@ -42,8 +43,6 @@ public class TokenService(
 
     var token = new SecurityTokenDescriptor
     {
-      Issuer = _jwtSettings.Issuer,
-      Audience = _jwtSettings.Audience,
       Expires = DateTime.UtcNow.AddMinutes(Convert.ToDouble(_jwtSettings.TokenExpirationMinutes)),
       Subject = new ClaimsIdentity(authClaims),
       SigningCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256)
