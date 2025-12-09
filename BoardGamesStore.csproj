@@ -12,46 +12,46 @@
   </ItemGroup>
 
   <ItemGroup>
-  <PackageReference Include="DotNetEnv" Version="3.1.1" />
-  <PackageReference Include="FluentResults" Version="4.0.0" />
-  <PackageReference Include="Google.Apis" Version="1.72.0" />
-  <PackageReference Include="Google.Apis.Auth" Version="1.72.0" />
-  <PackageReference Include="LiqPay" Version="2024.4.908.5254" />
-  <PackageReference Include="MailKit" Version="4.14.1" />
+    <PackageReference Include="DotNetEnv" Version="3.1.1" />
+    <PackageReference Include="FluentResults" Version="4.0.0" />
+    <PackageReference Include="Google.Apis" Version="1.72.0" />
+    <PackageReference Include="Google.Apis.Auth" Version="1.72.0" />
+    <PackageReference Include="LiqPay" Version="2024.4.908.5254" />
+    <PackageReference Include="MailKit" Version="4.14.1" />
 
-  <!-- ASP.NET Core 8.x -->
-  <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
-  <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.10" />
-  <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.10" />
-  <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.10" />
+    <!-- ASP.NET Core 8.x -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.10" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.10" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.10" />
 
-  <!-- EF Core 8.x -->
-  <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.10" />
-  <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.10">
-    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    <PrivateAssets>all</PrivateAssets>
-  </PackageReference>
-  <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.10" />
-  <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.10" />
-  <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.10" />
+    <!-- EF Core 8.x -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.10">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.10" />
 
-  <!-- Extensions 8.x -->
-  <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="8.0.10" />
-  <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="8.0.10" />
+    <!-- Extensions 8.x -->
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="8.0.10" />
+    <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="8.0.10" />
 
-  <!-- Scaffolding -->
-  <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.0" />
+    <!-- Scaffolding -->
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.0" />
 
-  <!-- Npgsql EF Core provider for PostgreSQL (8.x for EF Core 8) -->
-  <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.10" />
-  <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.Design" Version="1.1.0" />
+    <!-- Npgsql EF Core provider for PostgreSQL (8.x for EF Core 8) -->
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.10" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.Design" Version="1.1.0" />
 
-  <!-- pgvector: supports .NET 8 / EF Core via Npgsql -->
-  <PackageReference Include="Pgvector" Version="0.3.2" />
-  <PackageReference Include="Pgvector.EntityFrameworkCore" Version="0.2.2" />
-  <PackageReference Include="Swashbuckle.AspNetCore" Version="10.0.1" />
-  <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
-</ItemGroup>
+    <!-- pgvector: supports .NET 8 / EF Core via Npgsql -->
+    <PackageReference Include="Pgvector" Version="0.3.2" />
+    <PackageReference Include="Pgvector.EntityFrameworkCore" Version="0.2.2" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.0.1" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
+  </ItemGroup>
 
 
 </Project>

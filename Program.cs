@@ -234,10 +234,9 @@ app.MapControllers();
 
 app.MapControllerRoute(
 		name: "default",
-		pattern: "{controller=Home}/{action=Index}/{id?}")
-		.WithStaticAssets();
+		pattern: "{controller=Home}/{action=Index}/{id?}");
 
-app.MapRazorPages().WithStaticAssets();
+app.MapRazorPages();
 
 app.UseStaticFiles();
 
