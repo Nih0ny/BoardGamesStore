@@ -4,14 +4,14 @@ namespace BoardGamesStore.Models;
 
 public class PaymentRequestDto
 {
-  public int OrderId { get; set; }
+  public int OrderId { get; init; }
 }
 
 public class PaymentResponseDto
 {
-  public string Data { get; set; } = string.Empty;
-  public string Signature { get; set; } = string.Empty;
-  public string CheckoutUrl { get; set; } = "https://www.liqpay.ua/api/3/checkout";
+  public string Data { get; init; } = null!;
+  public string Signature { get; init; } = null!;
+  public string CheckoutUrl { get; init; } = "https://www.liqpay.ua/api/3/checkout";
 }
 
 public class LiqPayResponseWithInfo : LiqPayResponse

@@ -1,8 +1,7 @@
-using BoardGamesStore.Models;
 using BoardGamesStore.Models.Entities;
 using FluentResults;
 
-namespace BoardGamesStore.Services;
+namespace BoardGamesStore.Interfaces;
 
 public interface ITokenService
 {

@@ -1,6 +1,6 @@
 using FluentResults;
 
-namespace BoardGamesStore.Services;
+namespace BoardGamesStore.Interfaces;
 
 public interface IEvaluationService
 {

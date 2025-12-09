@@ -1,235 +1,305 @@
 using BoardGamesStore.Data;
+using BoardGamesStore.Interfaces;
 using BoardGamesStore.Models;
 using BoardGamesStore.Models.Entities;
+using FluentResults;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query;
 
 namespace BoardGamesStore.Services;
 
-public class ProductService(ApplicationDbContext db) : IProductService
+public class ProductService(ApplicationDbContext context) : IProductService
 {
-  private readonly ApplicationDbContext _db = db;
+  private readonly ApplicationDbContext _context = context;
 
-  public async Task<PagedResult<Product>> GetAllAsync(
-    int pageNumber,
-    int pageSize,
-    CancellationToken ct = default)
+  public async Task<PagedResult<ProductDto>> SearchAsync(ProductSearchQuery query, CancellationToken ct = default)
   {
-    IQueryable<Product> query = _db.Products.AsNoTracking();
+    var dbQuery = _context.Products
+        .AsNoTracking()
+        .Include(p => p.Categories)
+        .ThenInclude(pc => pc.Category)
+        .Include(p => p.RatingSummary)
+        .Where(p => !p.IsDeleted)
+        .AsQueryable();
 
-    query = query.Include(p => p.SimilarProducts);
-    query = query.Include(p => p.Comments!.OrderByDescending(c => c.CreatedAt).Take(10));
-
-    //query = query.Include(p => p.RatingSummary);
-
-    var totalCount = await query.CountAsync(ct);
-
-    var items = await query
-        .OrderByDescending(p => p.CreatedAt)
-        .Skip((pageNumber - 1) * pageSize)
-        .Take(pageSize)
-        .ToListAsync(ct);
-
-    return new PagedResult<Product>
+    if (!string.IsNullOrWhiteSpace(query.SearchText))
     {
-      Items = items,
-      TotalCount = totalCount,
-      PageNumber = pageNumber,
-      PageSize = pageSize
-    };
-  }
-
-  public async Task<Product?> GetByIdAsync(
-      int id,
-      Func<IQueryable<Product>, IIncludableQueryable<Product, object>>? include = null,
-      CancellationToken ct = default)
-  {
-    IQueryable<Product> q = _db.Products.Where(p => p.Id == id);
-    if (include is not null) q = include(q);
-    return await q.AsNoTracking().FirstOrDefaultAsync(ct);
-  }
-
-  public async Task<Product> CreateAsync(Product product, CancellationToken ct = default)
-  {
-    var now = DateTime.UtcNow;
-    product.CreatedAt = now;
-    product.UpdatedAt = now;
-
-    _db.Products.Add(product);
-    await _db.SaveChangesAsync(ct);
-    return product;
-  }
-
-  public async Task<bool> UpdateAsync(Product product, CancellationToken ct = default)
-  {
-    if (!await ExistsAsync(product.Id, ct)) return false;
-
-    product.UpdatedAt = DateTime.UtcNow;
-    _db.Products.Update(product);
-    await _db.SaveChangesAsync(ct);
-    return true;
-  }
-
-  public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
-  {
-    var p = await _db.Products.FirstOrDefaultAsync(x => x.Id == id, ct);
-    if (p is null) return false;
-
-    _db.Products.Remove(p);
-    await _db.SaveChangesAsync(ct);
-    return true;
-  }
-
-  public Task<bool> ExistsAsync(int id, CancellationToken ct = default) =>
-      _db.Products.AnyAsync(p => p.Id == id, ct);
-
-  public async Task<bool> AdjustStockAsync(int productId, int delta, CancellationToken ct = default)
-  {
-    var p = await _db.Products.FirstOrDefaultAsync(x => x.Id == productId, ct);
-    if (p is null) return false;
-
-    checked { p.Stock += delta; } // throws on overflow
-    p.UpdatedAt = DateTime.UtcNow;
-    await _db.SaveChangesAsync(ct);
-    return true;
-  }
-
-  public async Task<bool> SetImageUrlAsync(int productId, string? imageUrl, CancellationToken ct = default)
-  {
-    var p = await _db.Products.FirstOrDefaultAsync(x => x.Id == productId, ct);
-    if (p is null) return false;
-
-    p.ImageUrl = imageUrl;
-    p.UpdatedAt = DateTime.UtcNow;
-    await _db.SaveChangesAsync(ct);
-    return true;
-  }
-
-  // ---------- New query helpers ----------
-
-  public async Task<PagedResult<Product>> SearchAsync(ProductQuery query, CancellationToken ct = default)
-  {
-    IQueryable<Product> q = _db.Products.AsNoTracking();
-
-    if (!string.IsNullOrWhiteSpace(query.Text))
-    {
-      var text = query.Text.Trim();
-      q = q.Where(p =>
-          EF.Functions.ILike(p.Name, $"%{text}%") ||
-          (p.Description != null && EF.Functions.ILike(p.Description, $"%{text}%")));
+      var term = query.SearchText.Trim();
+      dbQuery = dbQuery.Where(p =>
+          p.Name.Contains(term) ||
+          (p.Description != null && p.Description.Contains(term)));
     }
 
     if (!string.IsNullOrWhiteSpace(query.Category))
     {
-      var cat = query.Category.Trim();
-      q = q.Where(p => p.Category == cat);
+      dbQuery = dbQuery.Where(p => p.Categories.Any(pc => pc.Category.Name == query.Category));
     }
 
-    if (query.MinPrice is not null) q = q.Where(p => p.Price >= query.MinPrice);
-    if (query.MaxPrice is not null) q = q.Where(p => p.Price <= query.MaxPrice);
-    if (query.InStockOnly) q = q.Where(p => p.Stock > 0);
-
-    // Sorting
-    q = (query.Sort?.ToLowerInvariant()) switch
+    if (query.MinPrice.HasValue)
     {
-      "price_asc" => q.OrderBy(p => p.Price).ThenBy(p => p.Id),
-      "price_desc" => q.OrderByDescending(p => p.Price).ThenByDescending(p => p.Id),
-      "name" => q.OrderBy(p => p.Name).ThenBy(p => p.Id),
-      "bonus_desc" => q.OrderByDescending(p => p.BonusRate).ThenByDescending(p => p.MaxBonusPaymentPercent),
-      "newest" => q.OrderByDescending(p => p.CreatedAt).ThenByDescending(p => p.Id),
-      _ => q.OrderBy(p => p.Id)
+      dbQuery = dbQuery.Where(p => p.Price >= query.MinPrice.Value);
+    }
+
+    if (query.MaxPrice.HasValue)
+    {
+      dbQuery = dbQuery.Where(p => p.Price <= query.MaxPrice.Value);
+    }
+
+    if (query.InStock.HasValue && query.InStock.Value)
+    {
+      dbQuery = dbQuery.Where(p => p.Stock > 0);
+    }
+
+    dbQuery = query.SortBy?.ToLower() switch
+    {
+      "price_asc" => dbQuery.OrderBy(p => p.Price),
+      "price_desc" => dbQuery.OrderByDescending(p => p.Price),
+      "name" => dbQuery.OrderBy(p => p.Name),
+      "newest" => dbQuery.OrderByDescending(p => p.CreatedAt),
+      _ => dbQuery.OrderByDescending(p => p.CreatedAt)
     };
 
-    var total = await q.CountAsync(ct);
+    var totalCount = await dbQuery.CountAsync(ct);
 
-    // Pagination
-    var skip = Math.Max(0, query.Skip);
-    var take = Math.Clamp(query.Take, 1, 200); // sane upper bound
-    var items = await q.Skip(skip).Take(take).ToListAsync(ct);
-
-    return new PagedResult<Product>
-    {
-      Items = items,
-      TotalCount = total,
-      PageNumber = (skip / take) + 1,
-      PageSize = take
-    };
-  }
-
-  public async Task<List<Product>> GetByIdsAsync(IEnumerable<int> ids, CancellationToken ct = default)
-  {
-    var idList = ids.Distinct().ToArray();
-    if (idList.Length == 0) return new List<Product>();
-    return await _db.Products.AsNoTracking()
-        .Where(p => idList.Contains(p.Id))
+    var items = await dbQuery
+        .Skip((query.PageNumber - 1) * query.PageSize)
+        .Take(query.PageSize)
         .ToListAsync(ct);
+
+    var dtos = items.Select(MapProductToDto).ToList();
+
+    return new PagedResult<ProductDto>
+    {
+      Items = dtos,
+      TotalCount = totalCount,
+      PageNumber = query.PageNumber,
+      PageSize = query.PageSize
+    };
   }
 
-  public async Task<List<Product>> GetSimilarAsync(int productId, int limit, CancellationToken ct = default)
+  public async Task<ProductDto?> GetByIdAsync(int id, CancellationToken ct = default)
   {
-    // Use the navigation if SimilarProduct is a link entity (Product <-> Product).
-    // Fallback: same category, excluding self.
-    var baseProduct = await _db.Products.AsNoTracking()
-        .FirstOrDefaultAsync(p => p.Id == productId, ct);
+    var product = await _context.Products
+        .AsNoTracking()
+        .Include(p => p.Categories)
+        .ThenInclude(pc => pc.Category)
+        .Include(p => p.RatingSummary)
+        .Where(p => p.Id == id && !p.IsDeleted)
+        .FirstOrDefaultAsync(ct);
 
-    if (baseProduct is null) return new List<Product>();
-
-    // If you have a link table SimilarProduct with ProductId/SimilarToProductId,
-    // you can query it here. Since we only have navs in the model, we’ll use category-based similarity.
-    var q = _db.Products.AsNoTracking()
-        .Where(p => p.Id != productId && p.Category == baseProduct.Category)
-        .OrderByDescending(p => p.BonusRate)
-        .ThenByDescending(p => p.CreatedAt);
-
-    limit = Math.Clamp(limit, 1, 50);
-    return await q.Take(limit).ToListAsync(ct);
+    return product == null ? null : MapProductToDto(product);
   }
 
-  public async Task<List<Product>> GetNewestAsync(int limit, string? category = null, CancellationToken ct = default)
+  public async Task<List<CategoryCount>> GetCategoryStatsAsync(CancellationToken ct = default)
   {
-    IQueryable<Product> q = _db.Products.AsNoTracking();
-    if (!string.IsNullOrWhiteSpace(category))
-      q = q.Where(p => p.Category == category);
-
-    limit = Math.Clamp(limit, 1, 50);
-    return await q.OrderByDescending(p => p.CreatedAt)
-                  .ThenByDescending(p => p.Id)
-                  .Take(limit)
-                  .ToListAsync(ct);
-  }
-
-  public async Task<List<CategoryCount>> GetCategoriesWithCountsAsync(CancellationToken ct = default)
-  {
-    return await _db.Products.AsNoTracking()
-        .GroupBy(p => p.Category ?? "(uncategorized)")
-        .Select(g => new CategoryCount(g.Key, g.Count()))
+    return await _context.ProductCategories
+        .AsNoTracking()
+        .GroupBy(pc => pc.Category.Name)
+        .Select(g => new CategoryCount { Category = g.Key, Count = g.Count() })
         .OrderByDescending(cc => cc.Count)
         .ThenBy(cc => cc.Category)
         .ToListAsync(ct);
   }
 
-  public async Task<(decimal min, decimal max, int count)> GetPriceStatsAsync(string? category = null, CancellationToken ct = default)
+  public async Task<(decimal min, decimal max)> GetPriceRangeAsync(string? category = null, CancellationToken ct = default)
   {
-    IQueryable<Product> q = _db.Products.AsNoTracking();
+    IQueryable<Product> query = _context.Products
+        .AsNoTracking()
+        .Where(p => !p.IsDeleted);
+
     if (!string.IsNullOrWhiteSpace(category))
-      q = q.Where(p => p.Category == category);
+    {
+      query = query.Where(p => p.Categories.Any(pc => pc.Category.Name == category));
+    }
 
-    var count = await q.CountAsync(ct);
-    if (count == 0) return (0m, 0m, 0);
+    var count = await query.CountAsync(ct);
+    if (count == 0) return (0m, 0m);
 
-    var min = await q.MinAsync(p => p.Price, ct);
-    var max = await q.MaxAsync(p => p.Price, ct);
-    return (min, max, count);
+    var min = await query.MinAsync(p => p.Price, ct);
+    var max = await query.MaxAsync(p => p.Price, ct);
+    return (min, max);
   }
 
-  public async Task<bool> SetDiscountAsync(int productId, decimal discountPercentage, CancellationToken ct = default)
+  public async Task<List<ProductDto>> GetSimilarAsync(int productId, int limit = 5, CancellationToken ct = default)
   {
-    var p = await _db.Products.FirstOrDefaultAsync(x => x.Id == productId, ct);
-    if (p is null) return false;
+    var baseProduct = await _context.Products
+        .AsNoTracking()
+        .Include(p => p.Categories)
+        .ThenInclude(pc => pc.Category)
+        .FirstOrDefaultAsync(p => p.Id == productId && !p.IsDeleted, ct);
 
-    p.MaxBonusPaymentPercent = discountPercentage;
-    p.UpdatedAt = DateTime.UtcNow;
-    await _db.SaveChangesAsync(ct);
-    return true;
+    if (baseProduct == null)
+      return [];
+
+    var baseCategory = baseProduct.Categories.FirstOrDefault()?.CategoryId;
+
+    var query = _context.Products
+        .AsNoTracking()
+        .Include(p => p.Categories)
+        .ThenInclude(pc => pc.Category)
+        .Include(p => p.RatingSummary)
+        .Where(p => p.Id != productId && !p.IsDeleted);
+
+    if (baseCategory.HasValue)
+    {
+      query = query.Where(p => p.Categories.Any(pc => pc.CategoryId == baseCategory));
+    }
+
+    limit = Math.Clamp(limit, 1, 50);
+
+    var results = await query
+        .OrderByDescending(p => p.RatingSummary != null ? p.RatingSummary.AverageRating : 0)
+        .ThenByDescending(p => p.CreatedAt)
+        .Take(limit)
+        .ToListAsync(ct);
+
+    return results.Select(MapProductToDto).ToList();
+  }
+
+  public async Task<ProductDto> CreateAsync(CreateProductDto dto, CancellationToken ct = default)
+  {
+    var product = new Product
+    {
+      Name = dto.Name,
+      Description = dto.Description,
+      Price = dto.Price,
+      BonusRate = 0.5m,
+      MaxBonusPaymentPercent = 100m,
+      Stock = dto.StockQuantity,
+      CreatedAt = DateTime.UtcNow,
+      UpdatedAt = DateTime.UtcNow,
+      IsDeleted = false
+    };
+
+    _context.Products.Add(product);
+    await _context.SaveChangesAsync(ct);
+
+    if (dto.Categories != null && dto.Categories.Any())
+    {
+      var categories = await _context.Categories
+          .Where(c => dto.Categories.Contains(c.Name))
+          .ToListAsync(ct);
+
+      foreach (var category in categories)
+      {
+        _context.ProductCategories.Add(new ProductCategory
+        {
+          ProductId = product.Id,
+          CategoryId = category.Id
+        });
+      }
+
+      await _context.SaveChangesAsync(ct);
+    }
+
+    return MapProductToDto(product);
+  }
+
+  public async Task<Result> UpdateAsync(int id, UpdateProductDto dto, CancellationToken ct = default)
+  {
+    var product = await _context.Products
+        .Include(p => p.Categories)
+        .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted, ct);
+
+    if (product == null)
+      return Result.Fail($"Product with ID {id} not found.");
+
+    try
+    {
+      product.Name = dto.Name;
+      product.Description = dto.Description;
+      product.Price = dto.Price;
+      product.UpdatedAt = DateTime.UtcNow;
+
+      _context.Products.Update(product);
+
+      if (dto.Categories != null)
+      {
+        _context.ProductCategories.RemoveRange(product.Categories);
+
+        var categories = await _context.Categories
+            .Where(c => dto.Categories.Contains(c.Name))
+            .ToListAsync(ct);
+
+        foreach (var category in categories)
+        {
+          _context.ProductCategories.Add(new ProductCategory
+          {
+            ProductId = product.Id,
+            CategoryId = category.Id
+          });
+        }
+      }
+
+      await _context.SaveChangesAsync(ct);
+      return Result.Ok();
+    }
+    catch (Exception ex)
+    {
+      return Result.Fail($"Error updating product: {ex.Message}");
+    }
+  }
+
+  public async Task<Result> DeleteAsync(int id, CancellationToken ct = default)
+  {
+    var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id, ct);
+    if (product == null)
+      return Result.Fail($"Product with ID {id} not found.");
+
+    try
+    {
+      product.IsDeleted = true;
+      product.UpdatedAt = DateTime.UtcNow;
+      _context.Products.Update(product);
+      await _context.SaveChangesAsync(ct);
+      return Result.Ok();
+    }
+    catch (Exception ex)
+    {
+      return Result.Fail($"Error deleting product: {ex.Message}");
+    }
+  }
+
+  public async Task<Result> AdjustStockAsync(int productId, int quantityChange, CancellationToken ct = default)
+  {
+    var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == productId, ct);
+    if (product == null)
+      return Result.Fail($"Product with ID {productId} not found.");
+
+    if (product.Stock + quantityChange < 0)
+      return Result.Fail("Insufficient stock.");
+
+    try
+    {
+      checked { product.Stock += quantityChange; }
+      product.UpdatedAt = DateTime.UtcNow;
+      _context.Products.Update(product);
+      await _context.SaveChangesAsync(ct);
+      return Result.Ok();
+    }
+    catch (OverflowException)
+    {
+      return Result.Fail("Stock adjustment would cause overflow.");
+    }
+    catch (Exception ex)
+    {
+      return Result.Fail($"Error adjusting stock: {ex.Message}");
+    }
+  }
+
+  private ProductDto MapProductToDto(Product product)
+  {
+    return new ProductDto
+    {
+      Id = product.Id,
+      Name = product.Name,
+      Price = product.Price,
+      BonusRate = product.BonusRate,
+      MaxBonusPaymentPercent = product.MaxBonusPaymentPercent,
+      Description = product.Description,
+      Rating = product.RatingSummary?.AverageRating,
+      IsInStock = product.Stock > 0,
+      Categories = product.Categories?.Select(pc => pc.Category.Name).ToList() ?? [],
+      ImageUrl = string.IsNullOrWhiteSpace(product.ImageUrl) ? null : new List<string> { product.ImageUrl }
+    };
   }
 }

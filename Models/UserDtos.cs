@@ -2,8 +2,8 @@ namespace BoardGamesStore.Models;
 
 public class UserDto
 {
-  public string? Id;
-  public string? UserName;
-  public string? Email;
-  public decimal? BonusBalance;
-};
+  public string? Id { get; init; }
+  public string? UserName { get; init; }
+  public string? Email { get; init; }
+  public decimal? BonusBalance { get; init; }
+}

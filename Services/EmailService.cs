@@ -5,6 +5,7 @@ using BoardGamesStore.Services.Settings;
 using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
 using MimeKit;
+using BoardGamesStore.Interfaces;
 
 public class EmailService(
   ObjectPool<SmtpClient> clientPool,

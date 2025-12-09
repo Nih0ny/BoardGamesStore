@@ -1,9 +1,9 @@
 using BoardGamesStore.Models;
 using BoardGamesStore.Models.Entities;
+using BoardGamesStore.Models.Enums;
 using FluentResults;
-using Microsoft.EntityFrameworkCore.Query;
 
-namespace BoardGamesStore.Services;
+namespace BoardGamesStore.Interfaces;
 
 public interface IOrderService
 {
@@ -22,11 +22,20 @@ public interface IOrderService
     int pageSize,
     CancellationToken ct = default);
 
-  Task<Result<OrderDto>> CreateAsync(string userId, int statusId, CancellationToken ct = default);
+  Task<Result<OrderDto>> CreateAsync(
+    string userId,
+    List<CreateOrderItemDto> items,
+    string recipientName,
+    string recipientPhone,
+    Address deliveryAddress,
+    DeliveryMethodId deliveryMethod,
+    CancellationToken ct = default);
 
   Task<Result> ReturnToCartAsync(int orderId, CancellationToken ct = default);
 
   Task<Result> DeleteAsync(int id, CancellationToken ct = default);
 
-  Task<Result> ChangeStatusAsync(int orderId, int statusId, CancellationToken ct = default);
+  Task<Result> ChangeStatusAsync(int orderId, OrderStatusId statusId, CancellationToken ct = default);
+
+  Task<Result> ChangePaymentStatusAsync(int orderId, PaymentStatusId statusId, CancellationToken ct = default);
 }

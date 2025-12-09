@@ -1,3 +1,4 @@
+using BoardGamesStore.Interfaces;
 using BoardGamesStore.Models;
 using BoardGamesStore.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -8,8 +9,8 @@ using System.Threading.Tasks;
 namespace BoardGamesStore.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
-public class AccountController(IAccountService accountService, ITokenService tokenService) : ControllerBase
+[Route("api/accounts")]
+public class AccountsController(IAccountService accountService, ITokenService tokenService) : ControllerBase
 {
   private readonly IAccountService _accountService = accountService;
   private readonly ITokenService _tokenService = tokenService;

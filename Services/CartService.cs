@@ -1,4 +1,5 @@
 using BoardGamesStore.Data;
+using BoardGamesStore.Interfaces;
 using BoardGamesStore.Models;
 using BoardGamesStore.Models.Entities;
 using BoardGamesStore.Services;
@@ -69,62 +70,6 @@ public class CartService(ApplicationDbContext context) : ICartService
       .FirstOrDefaultAsync(u => u.UserId == userId, ct);
   }
 
-  // FIXME: Deprecated
-  // public async Task<Cart?> CreateAsync(string email, CancellationToken ct = default)
-  // {
-  //     // load the user so we can set the required navigation property
-  //     var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email, ct);
-  //     if (user is null) return null;
-
-  //     var cart = new Cart
-  //     {
-  //         UserId = user.Id,
-  //         User = user,
-  //         CreatedAt = DateTime.UtcNow,
-  //         UpdatedAt = DateTime.UtcNow
-  //     };
-
-  //     _context.Carts.Add(cart);
-  //     await _context.SaveChangesAsync(ct);
-  //     return cart;
-  // }
-
-  // public async Task<bool> UpdateAsync(Cart cart, CancellationToken ct = default)
-  // {
-  //     // ensure user still exists (string id)
-  //     var userExists = await _context.Users.AnyAsync(u => u.Id == cart.UserId, ct);
-  //     if (!userExists) throw new KeyNotFoundException($"User '{cart.UserId}' not found.");
-
-  //     cart.UpdatedAt = DateTime.UtcNow;
-  //     _context.Carts.Update(cart);
-
-  //     try
-  //     {
-  //         await _context.SaveChangesAsync(ct);
-  //         return true;
-  //     }
-  //     catch (DbUpdateConcurrencyException)
-  //     {
-  //         return await ExistsAsync(cart.Id, ct);
-  //     }
-  // }
-
-  // public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
-  // {
-  //     var cart = await _context.Carts.FirstOrDefaultAsync(c => c.Id == id, ct);
-  //     if (cart is null) return false;
-
-  //     var items = _context.CartItems.Where(ci => ci.CartId == id);
-  //     _context.CartItems.RemoveRange(items);
-
-  //     _context.Carts.Remove(cart);
-  //     await _context.SaveChangesAsync(ct);
-  //     return true;
-  // }
-
-  // public Task<bool> ExistsAsync(int id, CancellationToken ct = default) =>
-  //     _context.Carts.AnyAsync(c => c.Id == id, ct);
-
   public async Task<Result<CartItem>> AddItemAsync(string userId, int productId, int quantity, CancellationToken ct = default)
   {
     if (quantity < 1) return Result.Fail<CartItem>("Quantity must be at least 1.");
@@ -138,9 +83,9 @@ public class CartService(ApplicationDbContext context) : ICartService
     var item = new CartItem
     {
       UserId = userId,
-      User = null!,             // <-- required nav set
+      User = null!,
       ProductId = productId,
-      Product = product,       // <-- required nav set
+      Product = product,
       Quantity = quantity,
       AddedAt = DateTime.UtcNow
     };

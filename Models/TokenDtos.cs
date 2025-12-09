@@ -4,15 +4,10 @@ namespace BoardGamesStore.Models;
 
 public class RefreshTokenDto
 {
-  public string Token { get; set; } = null!;
-
-  public string JwtId { get; set; } = null!;
-
-  public DateTime ExpiryDate { get; set; }
-
-  public bool Invalidated { get; set; }
-
-  public int UserId { get; set; } = 0;
-
-  public User User { get; set; } = null!;
+  public string Token { get; init; } = null!;
+  public string JwtId { get; init; } = null!;
+  public DateTime ExpiryDate { get; init; }
+  public bool Invalidated { get; init; }
+  public int UserId { get; init; }
+  public User User { get; init; } = null!;
 }

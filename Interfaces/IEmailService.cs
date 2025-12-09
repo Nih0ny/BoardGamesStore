@@ -1,4 +1,4 @@
-// Services/IEmailService.cs
+namespace BoardGamesStore.Interfaces;
 
 public interface IEmailService
 {

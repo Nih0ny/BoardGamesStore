@@ -1,8 +1,10 @@
 ﻿using BoardGamesStore.Models.Entities;
+using BoardGamesStore.Models.Enums;
 using BoardGamesStore.Models.Views;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 
 namespace BoardGamesStore.Data;
 
@@ -22,11 +24,19 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<ProductReport> ProductReports { get; set; }
     public DbSet<CommentReport> CommentReports { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
+    public DbSet<ReportStatus> ReportStatuses { get; set; }
+    public DbSet<PaymentStatus> PaymentStatuses { get; set; }
+    public DbSet<ProductRatingSummary> ProductRatingSummaries { get; set; }
+    public DbSet<Category> Categories { get; set; }
+    public DbSet<DeliveryMethod> DeliveryMethods { get; set; }
+    public DbSet<ProductCategory> ProductCategories { get; set; }
+    public DbSet<ProductImage> ProductImages { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
+        // Product entity
         modelBuilder.Entity<Product>(entity =>
         {
             entity.ToTable("products");
@@ -35,16 +45,34 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.Property(p => p.Price).HasColumnType("decimal(18,2)");
             entity.Property(p => p.BonusRate).HasColumnType("decimal(5,2)");
             entity.Property(p => p.MaxBonusPaymentPercent).HasColumnType("decimal(5,2)");
-            entity.HasOne(p => p.RatingSummary)
-                .WithOne(ps => ps.Product)
-                .HasForeignKey<ProductRatingSummary>(ps => ps.ProductId);
         });
 
+        // ProductCategory entity
+        modelBuilder.Entity<ProductCategory>(entity =>
+        {
+            entity.ToTable("product_categories");
+            entity.HasKey(pc => new { pc.ProductId, pc.CategoryId });
+            entity.HasOne(pc => pc.Product)
+                .WithMany(p => p.Categories)
+                .HasForeignKey(pc => pc.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(pc => pc.Category)
+                .WithMany(c => c.Products)
+                .HasForeignKey(pc => pc.CategoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ProductRatingSummary view
         modelBuilder.Entity<ProductRatingSummary>(entity =>
         {
             entity.ToView("product_stats_mv");
+            entity.HasKey(ps => ps.ProductId);
+            entity.HasOne(p => p.Product)
+                .WithOne(ps => ps.RatingSummary)
+                .HasForeignKey<ProductRatingSummary>(ps => ps.ProductId);
         });
 
+        // Comment entity
         modelBuilder.Entity<Comment>(entity =>
         {
             entity.ToTable("comments");
@@ -59,6 +87,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // CartItems entity (1 user - many cart items)
         modelBuilder.Entity<CartItem>(entity =>
         {
             entity.ToTable("cart_items");
@@ -73,6 +102,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // Order entity
         modelBuilder.Entity<Order>(entity =>
         {
             entity.ToTable("orders");
@@ -86,15 +116,17 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .WithMany(os => os.Orders)
                 .HasForeignKey(o => o.StatusId)
                 .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(o => o.DeliveryMethod)
+                .WithMany(dm => dm.Orders)
+                .HasForeignKey(o => o.DeliveryMethodId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(o => o.PaymentStatus)
+                .WithMany(ps => ps.Orders)
+                .HasForeignKey(o => o.PaymentStatusId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<OrderStatus>(entity =>
-        {
-            entity.ToTable("order_statuses");
-            entity.HasKey(os => os.Id);
-            entity.Property(os => os.Name).IsRequired().HasMaxLength(100);
-        });
-
+        // OrderItem entity
         modelBuilder.Entity<OrderItem>(entity =>
         {
             entity.ToTable("order_items");
@@ -110,6 +142,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
+        // PaymentTransaction entity
         modelBuilder.Entity<PaymentTransaction>(entity =>
         {
             entity.ToTable("payment_transactions");
@@ -121,6 +154,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // BonusTransaction entity
         modelBuilder.Entity<BonusTransaction>(entity =>
         {
             entity.ToTable("bonus_transactions");
@@ -136,6 +170,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
+        // SimilarProduct entity
         modelBuilder.Entity<SimilarProduct>(entity =>
         {
             entity.ToTable("similar_products");
@@ -150,6 +185,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // WishlistItems entity (1 user - many wishlist items)
         modelBuilder.Entity<WishlistItem>(entity =>
         {
             entity.ToTable("wishlists");
@@ -164,6 +200,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // Evaluation entity (1 user - many evaluations)
         modelBuilder.Entity<Evaluation>(entity =>
         {
             entity.ToTable("evaluations");
@@ -178,6 +215,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // ProductReport entity
         modelBuilder.Entity<ProductReport>(entity =>
         {
             entity.ToTable("product_reports");
@@ -190,8 +228,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .WithMany(p => p.ProductReports)
                 .HasForeignKey(pr => pr.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(pr => pr.Status)
+                .WithMany(s => s.ProductReports)
+                .HasForeignKey(pr => pr.StatusId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
+        // CommentReport entity
         modelBuilder.Entity<CommentReport>(entity =>
         {
             entity.ToTable("comment_reports");
@@ -204,8 +247,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .WithMany(c => c.CommentReports)
                 .HasForeignKey(cr => cr.CommentId)
                 .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(cr => cr.Status)
+                .WithMany(s => s.CommentReports)
+                .HasForeignKey(cr => cr.StatusId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
+        // RefreshToken entity
         modelBuilder.Entity<RefreshToken>(entity =>
         {
             entity.ToTable("refresh_tokens");
@@ -217,9 +265,102 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasIndex(rt => rt.Token).IsUnique();
         });
 
+        // User entity
         modelBuilder.Entity<User>(entity =>
         {
             entity.Property(u => u.Coins).HasColumnType("decimal(18,2)");
+        });
+
+        // Category entity
+        modelBuilder.Entity<Category>(entity =>
+        {
+            entity.ToTable("categories");
+            entity.HasKey(c => c.Id);
+            entity.Property(c => c.Name).IsRequired().HasMaxLength(100);
+        });
+
+        // ProductImage entity
+        modelBuilder.Entity<ProductImage>(entity =>
+        {
+            entity.ToTable("product_images");
+            entity.HasKey(pi => pi.Id);
+            entity.Property(pi => pi.FileName).IsRequired().HasMaxLength(255);
+            entity.Property(pi => pi.RelativePath).IsRequired().HasMaxLength(500);
+            entity.HasOne(pi => pi.Product)
+                .WithMany(p => p.Images)
+                .HasForeignKey(pi => pi.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(pi => new { pi.ProductId, pi.DisplayOrder });
+        });
+
+        // STATUSES
+
+        // ReportStatus entity
+        modelBuilder.Entity<ReportStatus>(entity =>
+        {
+            entity.ToTable("report_statuses");
+            entity.Property(s => s.Id)
+                .HasConversion<int>()
+                .ValueGeneratedNever();
+            entity.HasData(
+                Enum.GetValues<ReportStatusId>()
+                    .Select(e => new ReportStatus
+                    {
+                        Id = e,
+                        Name = e.ToString()
+                    })
+            );
+        });
+
+        // PaymentStatus entity
+        modelBuilder.Entity<PaymentStatus>(entity =>
+        {
+            entity.ToTable("payment_statuses");
+            entity.Property(s => s.Id)
+                .HasConversion<int>()
+                .ValueGeneratedNever();
+            entity.HasData(
+                Enum.GetValues<PaymentStatusId>()
+                    .Select(e => new PaymentStatus
+                    {
+                        Id = e,
+                        Name = e.ToString()
+                    })
+            );
+        });
+
+        // OrderStatus entity
+        modelBuilder.Entity<OrderStatus>(entity =>
+        {
+            entity.ToTable("order_statuses");
+            entity.Property(s => s.Id)
+                .HasConversion<int>()
+                .ValueGeneratedNever();
+            entity.HasData(
+                Enum.GetValues<OrderStatusId>()
+                    .Select(e => new OrderStatus
+                    {
+                        Id = e,
+                        Name = e.ToString()
+                    })
+            );
+        });
+
+        // DeliveryMethod entity
+        modelBuilder.Entity<DeliveryMethod>(entity =>
+        {
+            entity.ToTable("delivery_methods");
+            entity.Property(s => s.Id)
+                .HasConversion<int>()
+                .ValueGeneratedNever();
+            entity.HasData(
+                Enum.GetValues<DeliveryMethodId>()
+                    .Select(e => new DeliveryMethod
+                    {
+                        Id = e,
+                        Name = e.ToString()
+                    })
+            );
         });
     }
 }

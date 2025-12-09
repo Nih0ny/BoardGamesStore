@@ -86,6 +86,24 @@ namespace BoardGamesStore.Migrations
                     b.ToTable("cart_items", (string)null);
                 });
 
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.Category", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("categories", (string)null);
+                });
+
             modelBuilder.Entity("BoardGamesStore.Models.Entities.Comment", b =>
                 {
                     b.Property<int>("Id")
@@ -136,21 +154,80 @@ namespace BoardGamesStore.Migrations
                     b.Property<string>("Reason")
                         .HasColumnType("text");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("StatusId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("UserId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CommentId");
 
+                    b.HasIndex("StatusId");
+
                     b.HasIndex("UserId");
 
                     b.ToTable("comment_reports", (string)null);
+                });
+
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.DeliveryMethod", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("BasePrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("delivery_methods", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            BasePrice = 0m,
+                            Description = "",
+                            IsActive = true,
+                            Name = "SelfPickup"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            BasePrice = 0m,
+                            Description = "",
+                            IsActive = true,
+                            Name = "NovaPoshtaOffice"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            BasePrice = 0m,
+                            Description = "",
+                            IsActive = true,
+                            Name = "NovaPoshtaCourier"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            BasePrice = 0m,
+                            Description = "",
+                            IsActive = true,
+                            Name = "UkrPoshta"
+                        });
                 });
 
             modelBuilder.Entity("BoardGamesStore.Models.Entities.Evaluation", b =>
@@ -185,11 +262,50 @@ namespace BoardGamesStore.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AdminNote")
+                        .HasColumnType("text");
+
                     b.Property<decimal>("BonusTotal")
                         .HasColumnType("numeric");
 
+                    b.Property<string>("CancellationReason")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CustomerNote")
+                        .HasColumnType("text");
+
+                    b.Property<int>("DeliveryMethodId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime?>("FinishedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("ItemsTotal")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("PaymentStatusId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RecipientEmail")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RecipientName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("RecipientPhone")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("ShippingCost")
+                        .HasColumnType("numeric");
 
                     b.Property<int>("StatusId")
                         .HasColumnType("integer");
@@ -197,14 +313,20 @@ namespace BoardGamesStore.Migrations
                     b.Property<decimal>("Total")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<DateTime>("UpdatedAt")
+                    b.Property<string>("TrackingNumber")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UserId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DeliveryMethodId");
+
+                    b.HasIndex("PaymentStatusId");
 
                     b.HasIndex("StatusId");
 
@@ -245,19 +367,88 @@ namespace BoardGamesStore.Migrations
             modelBuilder.Entity("BoardGamesStore.Models.Entities.OrderStatus", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
                     b.ToTable("order_statuses", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "New"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Processing"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Shipped"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Name = "Delivered"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Name = "Completed"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Name = "Cancelled"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Name = "Returned"
+                        });
+                });
+
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.PaymentStatus", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("payment_statuses", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Pending"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Paid"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Failed"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Name = "Refunded"
+                        });
                 });
 
             modelBuilder.Entity("BoardGamesStore.Models.Entities.PaymentTransaction", b =>
@@ -304,9 +495,6 @@ namespace BoardGamesStore.Migrations
                     b.Property<decimal>("BonusRate")
                         .HasColumnType("decimal(5,2)");
 
-                    b.Property<string>("Category")
-                        .HasColumnType("text");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -341,6 +529,61 @@ namespace BoardGamesStore.Migrations
                     b.ToTable("products", (string)null);
                 });
 
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.ProductCategory", b =>
+                {
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ProductId", "CategoryId");
+
+                    b.HasIndex("CategoryId");
+
+                    b.ToTable("product_categories", (string)null);
+                });
+
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.ProductImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<bool>("IsMainImage")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RelativePath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId", "DisplayOrder");
+
+                    b.ToTable("product_images", (string)null);
+                });
+
             modelBuilder.Entity("BoardGamesStore.Models.Entities.ProductReport", b =>
                 {
                     b.Property<int>("Id")
@@ -358,17 +601,17 @@ namespace BoardGamesStore.Migrations
                     b.Property<string>("Reason")
                         .HasColumnType("text");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("StatusId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("UserId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ProductId");
+
+                    b.HasIndex("StatusId");
 
                     b.HasIndex("UserId");
 
@@ -408,6 +651,47 @@ namespace BoardGamesStore.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("refresh_tokens", (string)null);
+                });
+
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.ReportStatus", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("report_statuses", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Pending"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "InReview"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Approved"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Name = "Rejected"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Name = "Duplicate"
+                        });
                 });
 
             modelBuilder.Entity("BoardGamesStore.Models.Entities.SimilarProduct", b =>
@@ -739,13 +1023,20 @@ namespace BoardGamesStore.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("BoardGamesStore.Models.Entities.ReportStatus", "Status")
+                        .WithMany("CommentReports")
+                        .HasForeignKey("StatusId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("BoardGamesStore.Models.Entities.User", "User")
                         .WithMany("CommentReports")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Comment");
+
+                    b.Navigation("Status");
 
                     b.Navigation("User");
                 });
@@ -771,6 +1062,18 @@ namespace BoardGamesStore.Migrations
 
             modelBuilder.Entity("BoardGamesStore.Models.Entities.Order", b =>
                 {
+                    b.HasOne("BoardGamesStore.Models.Entities.DeliveryMethod", "DeliveryMethod")
+                        .WithMany("Orders")
+                        .HasForeignKey("DeliveryMethodId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BoardGamesStore.Models.Entities.PaymentStatus", "PaymentStatus")
+                        .WithMany("Orders")
+                        .HasForeignKey("PaymentStatusId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("BoardGamesStore.Models.Entities.OrderStatus", "Status")
                         .WithMany("Orders")
                         .HasForeignKey("StatusId")
@@ -780,8 +1083,47 @@ namespace BoardGamesStore.Migrations
                     b.HasOne("BoardGamesStore.Models.Entities.User", "User")
                         .WithMany("Orders")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.OwnsOne("BoardGamesStore.Models.Entities.Address", "DeliveryAddress", b1 =>
+                        {
+                            b1.Property<int>("OrderId")
+                                .HasColumnType("integer");
+
+                            b1.Property<string>("Apartment")
+                                .HasColumnType("text");
+
+                            b1.Property<string>("Building")
+                                .HasColumnType("text");
+
+                            b1.Property<string>("City")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<string>("PostalCode")
+                                .HasColumnType("text");
+
+                            b1.Property<string>("Region")
+                                .HasColumnType("text");
+
+                            b1.Property<string>("Street")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.HasKey("OrderId");
+
+                            b1.ToTable("orders");
+
+                            b1.WithOwner()
+                                .HasForeignKey("OrderId");
+                        });
+
+                    b.Navigation("DeliveryAddress")
                         .IsRequired();
+
+                    b.Navigation("DeliveryMethod");
+
+                    b.Navigation("PaymentStatus");
 
                     b.Navigation("Status");
 
@@ -818,6 +1160,36 @@ namespace BoardGamesStore.Migrations
                     b.Navigation("Order");
                 });
 
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.ProductCategory", b =>
+                {
+                    b.HasOne("BoardGamesStore.Models.Entities.Category", "Category")
+                        .WithMany("Products")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BoardGamesStore.Models.Entities.Product", "Product")
+                        .WithMany("Categories")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.ProductImage", b =>
+                {
+                    b.HasOne("BoardGamesStore.Models.Entities.Product", "Product")
+                        .WithMany("Images")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("BoardGamesStore.Models.Entities.ProductReport", b =>
                 {
                     b.HasOne("BoardGamesStore.Models.Entities.Product", "Product")
@@ -826,13 +1198,20 @@ namespace BoardGamesStore.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("BoardGamesStore.Models.Entities.ReportStatus", "Status")
+                        .WithMany("ProductReports")
+                        .HasForeignKey("StatusId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("BoardGamesStore.Models.Entities.User", "User")
                         .WithMany("ProductReports")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Product");
+
+                    b.Navigation("Status");
 
                     b.Navigation("User");
                 });
@@ -948,9 +1327,19 @@ namespace BoardGamesStore.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.Category", b =>
+                {
+                    b.Navigation("Products");
+                });
+
             modelBuilder.Entity("BoardGamesStore.Models.Entities.Comment", b =>
                 {
                     b.Navigation("CommentReports");
+                });
+
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.DeliveryMethod", b =>
+                {
+                    b.Navigation("Orders");
                 });
 
             modelBuilder.Entity("BoardGamesStore.Models.Entities.Order", b =>
@@ -967,13 +1356,22 @@ namespace BoardGamesStore.Migrations
                     b.Navigation("Orders");
                 });
 
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.PaymentStatus", b =>
+                {
+                    b.Navigation("Orders");
+                });
+
             modelBuilder.Entity("BoardGamesStore.Models.Entities.Product", b =>
                 {
                     b.Navigation("CartItems");
 
+                    b.Navigation("Categories");
+
                     b.Navigation("Comments");
 
                     b.Navigation("Evaluations");
+
+                    b.Navigation("Images");
 
                     b.Navigation("OrderItems");
 
@@ -986,6 +1384,13 @@ namespace BoardGamesStore.Migrations
                     b.Navigation("SimilarProducts");
 
                     b.Navigation("WishlistItems");
+                });
+
+            modelBuilder.Entity("BoardGamesStore.Models.Entities.ReportStatus", b =>
+                {
+                    b.Navigation("CommentReports");
+
+                    b.Navigation("ProductReports");
                 });
 
             modelBuilder.Entity("BoardGamesStore.Models.Entities.User", b =>

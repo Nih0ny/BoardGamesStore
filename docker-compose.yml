@@ -21,6 +21,8 @@ services:
       context: .
     image: my-backend:latest
     container_name: my_backend
+    volumes:
+      - images:/app/wwwroot/images
     ports:
       - "8080:8080"
     depends_on:

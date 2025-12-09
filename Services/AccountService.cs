@@ -1,4 +1,5 @@
 using BoardGamesStore.Data;
+using BoardGamesStore.Interfaces;
 using BoardGamesStore.Models;
 using BoardGamesStore.Models.Entities;
 using BoardGamesStore.Services;

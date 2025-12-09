@@ -11,6 +11,9 @@ using Microsoft.Extensions.ObjectPool;
 using MailKit.Net.Smtp;
 using Microsoft.Extensions.Options;
 using BoardGamesStore.Models.Entities;
+using BoardGamesStore.Interfaces;
+using Microsoft.OpenApi;
+using BoardGamesStore.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -111,19 +114,22 @@ builder.Services.AddSingleton(serviceProvider =>
 	return provider.Create(policy);
 });
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-// builder.Services.AddScoped(typeof(IGenericService<>), typeof(GenericService<>));
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
-
 builder.Services.AddScoped<ICartService, CartService>();
-//builder.Services.AddScoped<ICartItemService, CartService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
-//builder.Services.AddScoped<IOrderItemService, OrderItemService>();
 builder.Services.AddScoped<IProductService, ProductService>();
-//builder.Services.AddScoped<IProductReportService, ProductReportService>();
+builder.Services.AddScoped<IProductImageService, ProductImageService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IEvaluationService, EvaluationService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<IProductReportService, ProductReportService>();
+builder.Services.AddScoped<ICommentReportService, CommentReportService>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
+builder.Services.AddScoped<IBonusService, BonusService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddLogging(configure => configure.AddConsole());
 builder.Services.AddHostedService<ProductRatingRefreshService>();
@@ -131,6 +137,35 @@ builder.Services.AddHostedService<ProductRatingRefreshService>();
 builder.Services.AddRazorPages();
 
 builder.Environment.EnvironmentName = "Development";
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+	var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+	var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+	if (File.Exists(xmlPath))
+	{
+		options.IncludeXmlComments(xmlPath);
+	}
+
+	options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+	{
+		Name = "Authorization",
+		Type = SecuritySchemeType.Http,
+		Scheme = "Bearer",
+		BearerFormat = "JWT",
+		In = ParameterLocation.Header,
+		Description = "Enter JWT token"
+	});
+
+	options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+	{
+		{
+			new OpenApiSecuritySchemeReference("Bearer", document),
+			new List<string>()
+		}
+	});
+});
 
 var app = builder.Build();
 
@@ -168,6 +203,8 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
 	app.UseMigrationsEndPoint();
+	app.UseSwagger(); // Генерує JSON-файл специфікації (swagger.json)
+	app.UseSwaggerUI();
 }
 else
 {
@@ -194,5 +231,7 @@ app.MapControllerRoute(
 
 app.MapRazorPages()
 	.WithStaticAssets();
+
+app.UseStaticFiles();
 
 app.Run();

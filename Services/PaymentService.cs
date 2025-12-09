@@ -12,14 +12,16 @@ using System.Text.Json;
 using Newtonsoft.Json.Linq;
 using Microsoft.EntityFrameworkCore;
 using FluentResults;
+using BoardGamesStore.Interfaces;
 
 namespace BoardGamesStore.Services;
 
-public class PaymentService(ApplicationDbContext context, IOptions<PaymentSettings> paymentSettings, IOrderService orderService) : IPaymentService
+public class PaymentService(ApplicationDbContext context, IOptions<PaymentSettings> paymentSettings, IOrderService orderService, IBonusService bonusService) : IPaymentService
 {
   private readonly ApplicationDbContext _context = context;
   private readonly PaymentSettings _paymentSettings = paymentSettings.Value;
   private readonly IOrderService _orderService = orderService;
+  private readonly IBonusService _bonusService = bonusService;
 
   public async Task<PaymentResponseDto?> CreatePaymentAsync(int orderId, string userId, string serverUrl, string clientUrl)
   {
@@ -71,13 +73,14 @@ public class PaymentService(ApplicationDbContext context, IOptions<PaymentSettin
 
     if (response != null && (response.Status == LiqPayResponseStatus.Success || response.Status == LiqPayResponseStatus.Sandbox))
     {
-      var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == response.Info.UserId);
-      if (user != null)
-      {
-        user.Coins += response.Info.Bonus;
-        await _context.SaveChangesAsync();
-        Console.WriteLine($"Added {response.Info.Bonus} bonus coins to UserId: {user.Id}");
-      }
+      await _bonusService.AccrueBonusesAsync(response.Info.UserId, response.Info.Bonus);
+      // var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == response.Info.UserId);
+      // if (user != null)
+      // {
+      //   user.Coins += response.Info.Bonus;
+      //   await _context.SaveChangesAsync();
+      //   Console.WriteLine($"Added {response.Info.Bonus} bonus coins to UserId: {user.Id}");
+      // }
 
       Console.WriteLine($"Payment successful for OrderId: {response.OrderId}");
 

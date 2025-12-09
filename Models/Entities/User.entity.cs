@@ -10,7 +10,6 @@ public class User : IdentityUser
   public bool IsDeleted { get; set; }
 
   public ICollection<Comment>? Comments { get; set; }
-  //public Cart? Cart { get; set; }
   public ICollection<CartItem>? CartItems { get; set; }
   public ICollection<Order>? Orders { get; set; }
   public ICollection<BonusTransaction>? BonusTransactions { get; set; }

@@ -13,7 +13,7 @@ public class Product
   public string? Description { get; set; }
   public decimal Price { get; set; }
   public int Stock { get; set; }
-  public string? Category { get; set; } // TODO: Make enum or separate entity
+  public ICollection<ProductCategory> Categories { get; set; } = [];
   public string? ImageUrl { get; set; }
   public decimal BonusRate { get; set; }
   public decimal MaxBonusPaymentPercent { get; set; }
@@ -30,5 +30,6 @@ public class Product
   public ICollection<WishlistItem>? WishlistItems { get; set; }
   public ICollection<Evaluation>? Evaluations { get; set; }
   public ICollection<ProductReport>? ProductReports { get; set; }
+  public ICollection<ProductImage>? Images { get; set; }
 }
 

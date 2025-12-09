@@ -2,14 +2,29 @@ namespace BoardGamesStore.Models;
 
 public class UserWishlistDto
 {
-  public required string UserId { get; set; }
-  public required string UserEmail { get; set; }
-  public required List<WishlistItemDto> Items { get; set; }
+  public string UserId { get; init; } = null!;
+  public string UserEmail { get; init; } = null!;
+  public List<WishlistItemDto> Items { get; init; } = null!;
 }
 
 public class WishlistItemDto
 {
-  public int ProductId { get; set; }
-  public required string ProductName { get; set; }
-  public decimal Price { get; set; }
+  public int Id { get; init; }
+  public int ProductId { get; init; }
+  public string ProductName { get; init; } = null!;
+  public decimal Price { get; init; }
+}
+
+public class CreateWishlistItemDto
+{
+  public int ProductId { get; init; }
+}
+
+public class AddWishlistItemResponseDto
+{
+  public int Id { get; init; }
+  public int ProductId { get; init; }
+  public string ProductName { get; init; } = null!;
+  public decimal Price { get; init; }
+  public DateTime AddedAt { get; init; }
 }

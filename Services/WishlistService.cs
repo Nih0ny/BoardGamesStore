@@ -1,4 +1,5 @@
 using BoardGamesStore.Data;
+using BoardGamesStore.Interfaces;
 using BoardGamesStore.Models;
 using BoardGamesStore.Models.Entities;
 using FluentResults;
@@ -12,8 +13,7 @@ public class WishlistService(ApplicationDbContext context) : IWishlistService
   public async Task<PagedResult<UserWishlistDto>> GetAllAsync(int pageNumber, int pageSize, CancellationToken ct = default)
   {
     var query = _context.Users
-        .AsNoTracking()
-        .Where(u => u.WishlistItems!.Any());
+        .AsNoTracking();
 
     var totalCount = await query.CountAsync(ct);
 
@@ -27,6 +27,7 @@ public class WishlistService(ApplicationDbContext context) : IWishlistService
           UserEmail = u.Email!,
           Items = u.WishlistItems!.Select(wi => new WishlistItemDto
           {
+            Id = wi.Id,
             ProductName = wi.Product.Name,
             ProductId = wi.ProductId,
             Price = wi.Product.Price
@@ -52,6 +53,7 @@ public class WishlistService(ApplicationDbContext context) : IWishlistService
         UserEmail = u.Email!,
         Items = u.WishlistItems!.Select(wi => new WishlistItemDto
         {
+          Id = wi.Id,
           ProductId = wi.ProductId,
           ProductName = wi.Product.Name,
           Price = wi.Product.Price
@@ -60,13 +62,18 @@ public class WishlistService(ApplicationDbContext context) : IWishlistService
       .FirstOrDefaultAsync(u => u.UserId == userId, ct);
   }
 
-  public async Task<Result<WishlistItem>> AddAsync(string userId, int productId)
+  public async Task<Result<AddWishlistItemResponseDto>> AddAsync(string userId, int productId)
   {
-    var user = await _context.Users.FindAsync(userId);
+    var user = await _context.Users.FindAsync([userId], cancellationToken: default);
     if (user == null) return Result.Fail($"User '{userId}' not found.");
 
-    var product = await _context.Products.FindAsync(productId);
+    var product = await _context.Products.FindAsync([productId], cancellationToken: default);
     if (product == null) return Result.Fail($"Product '{productId}' not found.");
+
+    var wishlistItemExists = await _context.WishlistItems
+      .AnyAsync(wi => wi.UserId == userId && wi.ProductId == productId);
+    if (wishlistItemExists)
+      return Result.Fail("Product is already in the wishlist.");
 
     var wishlistItem = new WishlistItem
     {
@@ -79,13 +86,25 @@ public class WishlistService(ApplicationDbContext context) : IWishlistService
 
     _context.WishlistItems.Add(wishlistItem);
     await _context.SaveChangesAsync();
-    return Result.Ok(wishlistItem);
+
+    return Result.Ok(new AddWishlistItemResponseDto
+    {
+      Id = wishlistItem.Id,
+      ProductId = wishlistItem.ProductId,
+      ProductName = product.Name,
+      Price = product.Price,
+      AddedAt = wishlistItem.AddedAt
+    });
   }
 
-  public async Task<Result> DeleteAsync(int wishlistItemId)
+  public async Task<Result> DeleteAsync(string userId, int productId)
   {
-    var wishlistItem = await _context.WishlistItems.FindAsync(wishlistItemId);
-    if (wishlistItem is null) return Result.Fail("Wishlist item not found.");
+    var wishlistItem = await _context.WishlistItems
+      .FirstOrDefaultAsync(wi => wi.UserId == userId && wi.ProductId == productId);
+
+    if (wishlistItem is null)
+      return Result.Fail("Product not found in wishlist.");
+
     _context.WishlistItems.Remove(wishlistItem);
     await _context.SaveChangesAsync();
     return Result.Ok();

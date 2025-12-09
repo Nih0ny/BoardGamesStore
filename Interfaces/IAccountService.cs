@@ -1,8 +1,8 @@
-// Services/IAccountService.cs
-
 using BoardGamesStore.Models;
 using FluentResults;
 using Microsoft.AspNetCore.Identity;
+
+namespace BoardGamesStore.Interfaces;
 
 public interface IAccountService
 {

@@ -1,3 +1,4 @@
+using BoardGamesStore.Interfaces;
 using BoardGamesStore.Services;
 using LiqPay.SDK;
 using Microsoft.AspNetCore.Authorization;
@@ -6,19 +7,20 @@ using Microsoft.AspNetCore.Mvc;
 namespace BoardGamesStore.Controllers;
 
 [ApiController]
-[Route("api")]
+[Route("api/payments")]
 public class PaymentsController(IPaymentService paymentService) : Controller
 {
   private readonly IPaymentService _paymentService = paymentService;
 
-  [HttpPost("orders/{orderId:int}/[controller]")]
-  [Authorize]
+  /// <summary>
+  /// Processes a payment for an order.
+  /// </summary>
+  [HttpPost("orders/{orderId:int}")]
   public async Task<IActionResult> ProcessPayment(int orderId, [FromServices] IHttpContextAccessor httpContextAccessor)
   {
     var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-    if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-    var paymentResponse = await _paymentService.CreatePaymentAsync(orderId, userId, "https://leda-overdelicious-zuri.ngrok-free.dev/api/payments/callback", "https://leda-overdelicious-zuri.ngrok-free.dev/");
+    var paymentResponse = await _paymentService.CreatePaymentAsync(orderId, userId!, "https://leda-overdelicious-zuri.ngrok-free.dev/api/payments/callback", "https://leda-overdelicious-zuri.ngrok-free.dev/");
     if (paymentResponse != null)
     {
       return Ok(paymentResponse);
@@ -26,8 +28,10 @@ public class PaymentsController(IPaymentService paymentService) : Controller
     return BadRequest("Payment processing failed");
   }
 
-  [HttpPost]
-  [Route("[controller]/callback")]
+  /// <summary>
+  /// Handles payment gateway callbacks.
+  /// </summary>
+  [HttpPost("callback")]
   public async Task<IActionResult> PaymentCallback()
   {
     var data = Request.Form["data"].ToString();

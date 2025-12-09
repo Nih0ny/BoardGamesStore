@@ -9,15 +9,17 @@ using BoardGamesStore.Data;
 using BoardGamesStore.Models;
 using BoardGamesStore.Services;
 using Microsoft.AspNetCore.Authorization;
+using BoardGamesStore.Interfaces;
 
 namespace BoardGamesStore.Controllers;
 
-public class WishlistsController(IWishlistService wishlistService) : Controller
+[ApiController]
+[Route("api/wishlists")]
+public class WishlistsController(IWishlistService wishlistService) : ControllerBase
 {
   private readonly IWishlistService _wishlistService = wishlistService;
-  // GET By User Id or Email (using query), return json with products in wishlist
 
-  [HttpGet]
+  [HttpGet("my")]
   [Authorize]
   public async Task<IActionResult> GetUserWishlist()
   {
@@ -25,12 +27,10 @@ public class WishlistsController(IWishlistService wishlistService) : Controller
     if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
     var wishlist = await _wishlistService.GetByUserIdAsync(userId);
-    if (wishlist == null) return NotFound();
 
     return Ok(wishlist);
   }
 
-  // GET All Wishlists (only for admin) (with pagination return 10 users with 10 products and with posibility request new 10 users or 10 products for user))
   [HttpGet]
   [Authorize(Roles = "Admin")]
   public async Task<IActionResult> GetAllWishlists(int userPage = 1, int productPage = 1)
@@ -39,31 +39,28 @@ public class WishlistsController(IWishlistService wishlistService) : Controller
     return Ok(wishlists);
   }
 
-  // POST Add new product in wishlist
   [Authorize]
-  [HttpPost("add")]
-  public async Task<IActionResult> AddProductToWishlist([FromBody] int productId)
-  {
-    var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
-    if (string.IsNullOrEmpty(email)) return Unauthorized();
-
-    var wishlistItem = await _wishlistService.AddAsync(email, productId);
-    return Ok(wishlistItem);
-  }
-
-  // DELETE Remove product from wishlist
-  [Authorize]
-  [HttpDelete("remove")]
-  public async Task<IActionResult> RemoveProductFromWishlist(int id)
+  [HttpPost]
+  public async Task<IActionResult> AddProductToWishlist([FromBody] CreateWishlistItemDto dto)
   {
     var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-    var wishlist = await _wishlistService.GetByUserIdAsync(userId);
-    if (wishlist == null) return NotFound();
-    if (wishlist.UserId != userId && !User.IsInRole("Admin")) return Forbid();
-    var result = await _wishlistService.DeleteAsync(id);
-    if (result.IsFailed) return NotFound();
+    var result = await _wishlistService.AddAsync(userId, dto.ProductId);
+    if (result.IsFailed) return BadRequest(result.Errors);
+
+    return Ok(result.Value);
+  }
+
+  [Authorize]
+  [HttpDelete("{productId:int}")]
+  public async Task<IActionResult> RemoveProductFromWishlist(int productId)
+  {
+    var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+    var result = await _wishlistService.DeleteAsync(userId, productId);
+    if (result.IsFailed) return NotFound(result.Errors);
     return NoContent();
   }
 }

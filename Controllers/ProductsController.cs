@@ -1,162 +1,124 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using BoardGamesStore.Models;
-using BoardGamesStore.Services;
-using BoardGamesStore.Models.Entities;
+using BoardGamesStore.Interfaces;
 
 namespace BoardGamesStore.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
-public class ProductsController(IProductService products) : ControllerBase
+[Route("api/products")]
+public class ProductsController(IProductService productService, IProductImageService imageService) : ControllerBase
 {
-	private readonly IProductService _products = products;
+	private readonly IProductService _productService = productService;
+	private readonly IProductImageService _imageService = imageService;
 
 	[HttpGet]
-	public async Task<IActionResult> GetAll(int pageNumber = 1, int pageSize = 20)
+	public async Task<IActionResult> Search([FromQuery] ProductSearchQuery query, CancellationToken ct)
 	{
-		var result = await _products.GetAllAsync(pageNumber, pageSize, HttpContext.RequestAborted);
-		return Ok(result);
+		var result = await _productService.SearchAsync(query, ct);
+		Response.Headers.Append("X-Total-Count", result.TotalCount.ToString());
+		return Ok(result.Items);
 	}
 
 	[HttpGet("{id:int}")]
-	public async Task<IActionResult> GetById(int id)
+	public async Task<IActionResult> GetById(int id, CancellationToken ct)
 	{
-		var ct = HttpContext.RequestAborted;
-		var p = await _products.GetByIdAsync(id, ct: ct);
-		return p is null ? NotFound() : Ok(p);
+		var product = await _productService.GetByIdAsync(id, ct);
+		return product is null ? NotFound() : Ok(product);
+	}
+
+	[HttpGet("{id:int}/similar")]
+	public async Task<IActionResult> GetSimilar(int id, [FromQuery] int limit = 5, CancellationToken ct = default)
+	{
+		var similar = await _productService.GetSimilarAsync(id, limit, ct);
+		return Ok(similar);
 	}
 
 	[HttpPost]
 	[Authorize(Roles = "Admin")]
-	public async Task<IActionResult> Create([FromBody] Product dto)
+	public async Task<IActionResult> Create([FromBody] CreateProductDto dto, CancellationToken ct)
 	{
-		var ct = HttpContext.RequestAborted;
-		var created = await _products.CreateAsync(dto, ct);
-		return Ok(created);
+		var created = await _productService.CreateAsync(dto, ct);
+		return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
 	}
 
+	[HttpPut("{id:int}")]
 	[Authorize(Roles = "Admin")]
-	[HttpPatch("{id:int}")]
-	public async Task<IActionResult> Update(int id, [FromBody] Product dto)
+	public async Task<IActionResult> Update(int id, [FromBody] UpdateProductDto dto, CancellationToken ct)
 	{
-		if (id != dto.Id) return BadRequest("Mismatched id.");
-		var ct = HttpContext.RequestAborted;
-		var ok = await _products.UpdateAsync(dto, ct);
-		return ok ? Ok(dto) : NotFound();
+		var result = await _productService.UpdateAsync(id, dto, ct);
+		return result.IsSuccess ? NoContent() : NotFound();
 	}
 
-	[Authorize(Roles = "Admin")]
 	[HttpDelete("{id:int}")]
-	public async Task<IActionResult> Delete(int id)
-	{
-		var ct = HttpContext.RequestAborted;
-		var ok = await _products.DeleteAsync(id, ct);
-		return ok ? NoContent() : NotFound();
-	}
-
-	public record SearchRequest(
-			string? Text,
-			string? Category,
-			decimal? MinPrice,
-			decimal? MaxPrice,
-			bool? InStockOnly,
-			string? Sort,
-			int? Skip,
-			int? Take
-	);
-
-	[HttpGet("search")]
-	public async Task<IActionResult> Search([FromQuery] SearchRequest req)
-	{
-		var ct = HttpContext.RequestAborted;
-
-		var q = new ProductQuery(
-				Text: req.Text,
-				Category: req.Category,
-				MinPrice: req.MinPrice,
-				MaxPrice: req.MaxPrice,
-				InStockOnly: req.InStockOnly ?? false,
-				Sort: req.Sort,
-				Skip: req.Skip ?? 0,
-				Take: req.Take ?? 20
-		);
-
-		var result = await _products.SearchAsync(q, ct);
-
-		Response.Headers["X-Total-Count"] = result.TotalCount.ToString();
-
-		return Ok(result.Items);
-	}
-
-	[HttpGet("by-ids")]
-	public async Task<IActionResult> GetByIds([FromQuery] int[] ids)
-	{
-		var ct = HttpContext.RequestAborted;
-		if (ids is null || ids.Length == 0) return Ok(Array.Empty<Product>());
-		var items = await _products.GetByIdsAsync(ids, ct);
-		return Ok(items);
-	}
-
-	[HttpGet("{id:int}/similar")]
-	public async Task<IActionResult> GetSimilar(int id, [FromQuery] int limit = 8)
-	{
-		var ct = HttpContext.RequestAborted;
-		var items = await _products.GetSimilarAsync(id, limit, ct);
-		return Ok(items);
-	}
-
-	[HttpGet("newest")]
-	public async Task<IActionResult> GetNewest([FromQuery] int limit = 12, [FromQuery] string? category = null)
-	{
-		var ct = HttpContext.RequestAborted;
-		var items = await _products.GetNewestAsync(limit, category, ct);
-		return Ok(items);
-	}
-
-	[HttpGet("categories")]
-	public async Task<IActionResult> GetCategories()
-	{
-		var ct = HttpContext.RequestAborted;
-		var list = await _products.GetCategoriesWithCountsAsync(ct);
-		return Ok(list);
-	}
-
-	[HttpGet("stats/price")]
-	public async Task<IActionResult> GetPriceStats([FromQuery] string? category = null)
-	{
-		var ct = HttpContext.RequestAborted;
-		var (min, max, count) = await _products.GetPriceStatsAsync(category, ct);
-		return Ok(new { min, max, count });
-	}
-
-	public record AdjustStockRequest(int ProductId, int Delta);
-
-	[Authorize]
-	[HttpPost("stock/adjust")]
-	public async Task<IActionResult> AdjustStock([FromBody] AdjustStockRequest req)
-	{
-		var ct = HttpContext.RequestAborted;
-		var ok = await _products.AdjustStockAsync(req.ProductId, req.Delta, ct);
-		return ok ? NoContent() : NotFound();
-	}
-
-	public record SetImageRequest(string? ImageUrl);
-
-	[Authorize]
-	[HttpPut("{id:int}/image")]
-	public async Task<IActionResult> SetImage(int id, [FromBody] SetImageRequest req)
-	{
-		var ct = HttpContext.RequestAborted;
-		var ok = await _products.SetImageUrlAsync(id, req.ImageUrl, ct);
-		return ok ? NoContent() : NotFound();
-	}
-
 	[Authorize(Roles = "Admin")]
-	public async Task<IActionResult> SetDiscount(int id, [FromBody] decimal discountPercentage)
+	public async Task<IActionResult> Delete(int id, CancellationToken ct)
 	{
-		var ct = HttpContext.RequestAborted;
-		var ok = await _products.SetDiscountAsync(id, discountPercentage, ct);
-		return ok ? NoContent() : NotFound();
+		var result = await _productService.DeleteAsync(id, ct);
+		return result.IsSuccess ? NoContent() : NotFound();
+	}
+
+	[HttpPost("{productId:int}/images")]
+	[Authorize(Roles = "Admin")]
+	public async Task<IActionResult> UploadImage(int productId, IFormFile file, [FromQuery] bool isMainImage = false, CancellationToken ct = default)
+	{
+		var result = await _imageService.UploadImageAsync(productId, file, isMainImage, ct);
+		if (result.IsFailed)
+			return BadRequest(new { errors = result.Errors.Select(e => e.Message) });
+
+		return CreatedAtAction(nameof(GetProductImages), new { productId }, result.Value);
+	}
+
+	[HttpGet("{productId:int}/images")]
+	public async Task<IActionResult> GetProductImages(int productId, CancellationToken ct = default)
+	{
+		var result = await _imageService.GetProductImagesAsync(productId, ct);
+		if (result.IsFailed)
+			return NotFound(new { errors = result.Errors.Select(e => e.Message) });
+
+		return Ok(result.Value);
+	}
+
+	[HttpGet("{productId:int}/images/main")]
+	public async Task<IActionResult> GetMainImage(int productId, CancellationToken ct = default)
+	{
+		var result = await _imageService.GetMainImageAsync(productId, ct);
+		if (result.IsFailed)
+			return NotFound(new { errors = result.Errors.Select(e => e.Message) });
+
+		return Ok(result.Value);
+	}
+
+	[HttpPut("{productId:int}/images/{imageId:int}/main")]
+	[Authorize(Roles = "Admin")]
+	public async Task<IActionResult> SetMainImage(int productId, int imageId, CancellationToken ct = default)
+	{
+		var result = await _imageService.SetMainImageAsync(productId, imageId, ct);
+		if (result.IsFailed)
+			return BadRequest(new { errors = result.Errors.Select(e => e.Message) });
+
+		return NoContent();
+	}
+
+	[HttpDelete("images/{imageId:int}")]
+	[Authorize(Roles = "Admin")]
+	public async Task<IActionResult> DeleteImage(int imageId, CancellationToken ct = default)
+	{
+		var result = await _imageService.DeleteImageAsync(imageId, ct);
+		if (result.IsFailed)
+			return BadRequest(new { errors = result.Errors.Select(e => e.Message) });
+
+		return NoContent();
+	}
+
+	[HttpPut("{productId:int}/images/reorder")]
+	[Authorize(Roles = "Admin")]
+	public async Task<IActionResult> ReorderImages(int productId, [FromBody] List<(int imageId, int displayOrder)> ordering, CancellationToken ct = default)
+	{
+		var result = await _imageService.ReorderImagesAsync(productId, ordering, ct);
+		if (result.IsFailed)
+			return BadRequest(new { errors = result.Errors.Select(e => e.Message) });
+
+		return NoContent();
 	}
 }
