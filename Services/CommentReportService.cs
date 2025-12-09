@@ -95,17 +95,21 @@ public class CommentReportService(ApplicationDbContext context) : ICommentReport
     }
   }
 
-  public async Task<Result> UpdateAsync(UpdateCommentReportDto report, CancellationToken ct = default)
+  public async Task<Result> UpdateAsync(int id, UpdateCommentReportDto dto, CancellationToken ct = default)
   {
     try
     {
-      var existingReport = await _context.CommentReports
-          .FirstOrDefaultAsync(cr => cr.CommentId == report.CommentId, ct);
+      var existingReport = await _context.CommentReports.FirstOrDefaultAsync(cr => cr.Id == id, ct);
       if (existingReport == null)
         return Result.Fail("Comment report not found.");
 
-      if (!string.IsNullOrWhiteSpace(report.Reason))
-        existingReport.Reason = report.Reason;
+      // Only allow update if status is Pending (not in review)
+      if (existingReport.StatusId != ReportStatusId.Pending)
+        return Result.Fail("Can only update reports with Pending status.");
+
+      // Only allow updating reason
+      if (!string.IsNullOrWhiteSpace(dto.Reason))
+        existingReport.Reason = dto.Reason;
 
       _context.CommentReports.Update(existingReport);
       await _context.SaveChangesAsync(ct);

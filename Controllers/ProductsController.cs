@@ -58,6 +58,14 @@ public class ProductsController(IProductService productService, IProductImageSer
 		return result.IsSuccess ? NoContent() : NotFound();
 	}
 
+	[HttpPatch("{id:int}/discount")]
+	[Authorize(Roles = "Admin")]
+	public async Task<IActionResult> SetDiscount(int id, [FromBody] SetProductDiscountDto dto, CancellationToken ct)
+	{
+		var result = await _productService.SetDiscountAsync(id, dto, ct);
+		return result.IsSuccess ? NoContent() : BadRequest(result.Errors.Select(e => e.Message));
+	}
+
 	[HttpPost("{productId:int}/images")]
 	[Authorize(Roles = "Admin")]
 	public async Task<IActionResult> UploadImage(int productId, IFormFile file, [FromQuery] bool isMainImage = false, CancellationToken ct = default)

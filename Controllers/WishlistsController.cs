@@ -31,6 +31,13 @@ public class WishlistsController(IWishlistService wishlistService) : ControllerB
     return Ok(wishlist);
   }
 
+  [HttpGet("user/{userId}")]
+  public async Task<IActionResult> GetWishlistByUserId(string userId)
+  {
+    var wishlist = await _wishlistService.GetByUserIdAsync(userId);
+    return Ok(wishlist);
+  }
+
   [HttpGet]
   [Authorize(Roles = "Admin")]
   public async Task<IActionResult> GetAllWishlists(int userPage = 1, int productPage = 1)

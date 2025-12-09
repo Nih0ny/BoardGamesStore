@@ -135,6 +135,7 @@ builder.Services.AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddScoped<IBonusService, BonusService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ILookupsService, LookupsService>();
 
 builder.Services.AddLogging(configure => configure.AddConsole());
 builder.Services.AddHostedService<ProductRatingRefreshService>();

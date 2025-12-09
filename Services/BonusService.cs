@@ -1,6 +1,7 @@
 using BoardGamesStore.Data;
 using BoardGamesStore.Interfaces;
 using FluentResults;
+using Microsoft.EntityFrameworkCore;
 
 namespace BoardGamesStore.Services;
 
@@ -10,7 +11,7 @@ public class BonusService(ApplicationDbContext context) : IBonusService
 
   public async Task<Result<decimal>> GetUserBonusAsync(string userId, CancellationToken ct = default)
   {
-    var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+    var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
     if (user == null) return Result.Fail("User not found.");
     return Result.Ok(user.Coins);
   }

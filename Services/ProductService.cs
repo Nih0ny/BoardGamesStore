@@ -152,7 +152,7 @@ public class ProductService(ApplicationDbContext context) : IProductService
         .Take(limit)
         .ToListAsync(ct);
 
-    return results.Select(MapProductToDto).ToList();
+    return [.. results.Select(MapProductToDto)];
   }
 
   public async Task<ProductDto> CreateAsync(CreateProductDto dto, CancellationToken ct = default)
@@ -173,7 +173,7 @@ public class ProductService(ApplicationDbContext context) : IProductService
     _context.Products.Add(product);
     await _context.SaveChangesAsync(ct);
 
-    if (dto.Categories != null && dto.Categories.Any())
+    if (dto.Categories != null && dto.Categories.Count != 0)
     {
       var categories = await _context.Categories
           .Where(c => dto.Categories.Contains(c.Name))
@@ -283,6 +283,32 @@ public class ProductService(ApplicationDbContext context) : IProductService
     catch (Exception ex)
     {
       return Result.Fail($"Error adjusting stock: {ex.Message}");
+    }
+  }
+
+  public async Task<Result> SetDiscountAsync(int productId, SetProductDiscountDto dto, CancellationToken ct = default)
+  {
+    var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == productId, ct);
+    if (product == null)
+      return Result.Fail($"Product with ID {productId} not found.");
+
+    if (dto.DiscountPercent.HasValue)
+    {
+      if (dto.DiscountPercent < 0 || dto.DiscountPercent > 1)
+        return Result.Fail("Discount must be between 0 and 1 percent.");
+    }
+
+    try
+    {
+      product.DiscountPercent = dto.DiscountPercent;
+      product.UpdatedAt = DateTime.UtcNow;
+      _context.Products.Update(product);
+      await _context.SaveChangesAsync(ct);
+      return Result.Ok();
+    }
+    catch (Exception ex)
+    {
+      return Result.Fail($"Error setting discount: {ex.Message}");
     }
   }
 

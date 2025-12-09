@@ -77,25 +77,19 @@ public class CommentReportsController(ICommentReportService commentReportService
     return CreatedAtAction(nameof(GetById), new { id = commentId }, result);
   }
 
-  [HttpPatch("{id:int}")]
-  [Authorize(Roles = "Admin")]
-  public async Task<IActionResult> Edit(int id, [FromBody] UpdateCommentReportDto dto, CancellationToken ct = default)
+  [HttpPatch("{id:int}/reason")]
+  [Authorize]
+  public async Task<IActionResult> UpdateReason(int id, [FromBody] UpdateCommentReportDto dto, CancellationToken ct = default)
   {
+    var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
     var commentReport = await _commentReportService.GetByIdAsync(id, ct);
-    if (commentReport == null)
-      return NotFound();
+    if (commentReport == null) return NotFound();
+    if (commentReport.UserId != userId && !User.IsInRole("Admin")) return Forbid();
 
-    var updatedDto = new UpdateCommentReportDto
-    {
-      UserId = commentReport.UserId,
-      CommentId = dto.CommentId,
-      Reason = dto.Reason
-    };
-    var result = await _commentReportService.UpdateAsync(updatedDto, ct);
-    if (result.IsFailed)
-      return BadRequest(result.Errors.Select(e => e.Message));
-
-    return NoContent();
+    var result = await _commentReportService.UpdateAsync(id, dto, ct);
+    return result.IsSuccess ? NoContent() : BadRequest(result.Errors.Select(e => e.Message));
   }
 
   [HttpDelete("{id:int}")]

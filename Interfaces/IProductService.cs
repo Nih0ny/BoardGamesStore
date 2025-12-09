@@ -23,5 +23,7 @@ public interface IProductService
     Task<Result> DeleteAsync(int id, CancellationToken ct = default);
 
     Task<Result> AdjustStockAsync(int productId, int quantityChange, CancellationToken ct = default);
+
+    Task<Result> SetDiscountAsync(int productId, SetProductDiscountDto dto, CancellationToken ct = default);
 }
 

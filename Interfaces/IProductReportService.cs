@@ -1,5 +1,4 @@
 using BoardGamesStore.Models;
-using BoardGamesStore.Models.Entities;
 using BoardGamesStore.Models.Enums;
 using FluentResults;
 
@@ -18,7 +17,7 @@ public interface IProductReportService
 
   Task<Result<ProductReportDto>> CreateAsync(string userId, int productId, string reason, CancellationToken ct = default);
 
-  Task<Result> UpdateAsync(ProductReport report, CancellationToken ct = default);
+  Task<Result> UpdateAsync(int id, UpdateProductReportDto dto, CancellationToken ct = default);
 
   Task<Result> DeleteAsync(int id, CancellationToken ct = default);
 

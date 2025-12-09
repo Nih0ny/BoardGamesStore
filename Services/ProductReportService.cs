@@ -29,8 +29,10 @@ public class ProductReportService(ApplicationDbContext context) : IProductReport
         .Take(pageSize)
         .Select(pr => new ProductReportDto
         {
+          Id = pr.Id,
           ProductId = pr.ProductId,
           ProductName = pr.Product.Name,
+          Status = pr.Status.Name,
           ReportedBy = new UserDto
           {
             Id = pr.UserId,
@@ -59,8 +61,10 @@ public class ProductReportService(ApplicationDbContext context) : IProductReport
         .Where(pr => pr.Id == id)
         .Select(pr => new ProductReportDto
         {
+          Id = pr.Id,
           ProductId = pr.ProductId,
           ProductName = pr.Product.Name,
+          Status = pr.Status.Name,
           ReportedBy = new UserDto
           {
             Id = pr.UserId,
@@ -101,8 +105,10 @@ public class ProductReportService(ApplicationDbContext context) : IProductReport
       await _context.SaveChangesAsync(ct);
       return Result.Ok(new ProductReportDto
       {
+        Id = report.Id,
         ProductId = report.ProductId,
         ProductName = report.Product.Name,
+        Status = report.Status.Name,
         ReportedBy = new UserDto
         {
           Id = report.UserId,
@@ -118,20 +124,21 @@ public class ProductReportService(ApplicationDbContext context) : IProductReport
     }
   }
 
-  public async Task<Result> UpdateAsync(ProductReport report, CancellationToken ct = default)
+  public async Task<Result> UpdateAsync(int id, UpdateProductReportDto dto, CancellationToken ct = default)
   {
     try
     {
-      var existing = await _context.ProductReports.FirstOrDefaultAsync(x => x.Id == report.Id, ct);
+      var existing = await _context.ProductReports.FirstOrDefaultAsync(x => x.Id == id, ct);
       if (existing == null) return Result.Fail("Product report not found.");
 
-      var userExists = await _context.Users.AnyAsync(u => u.Id == report.UserId, ct);
-      if (!userExists) return Result.Fail($"User '{report.UserId}' not found.");
+      // Only allow update if status is Pending (not in review)
+      if (existing.StatusId != ReportStatusId.Pending)
+        return Result.Fail("Can only update reports with Pending status.");
 
-      var productExists = await _context.Products.AnyAsync(p => p.Id == report.ProductId, ct);
-      if (!productExists) return Result.Fail($"Product '{report.ProductId}' not found.");
+      // Only allow updating reason
+      existing.Reason = dto.Reason ?? existing.Reason;
 
-      _context.ProductReports.Update(report);
+      _context.ProductReports.Update(existing);
       await _context.SaveChangesAsync(ct);
       return Result.Ok();
     }

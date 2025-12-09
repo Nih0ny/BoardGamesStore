@@ -74,3 +74,8 @@ public class CategoryCount
     public string Category { get; init; } = null!;
     public int Count { get; init; }
 }
+
+public class SetProductDiscountDto
+{
+    public decimal? DiscountPercent { get; init; }
+}

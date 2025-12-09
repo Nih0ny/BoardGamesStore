@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace BoardGamesStore.Controllers;
 
 [ApiController]
-[Route("api/products/{productId:int}/evaluations")]
+[Route("api/products/{productId:int}/evaluation")]
 public class EvaluationsController(IEvaluationService evaluationService) : ControllerBase
 {
   private readonly IEvaluationService _evaluationService = evaluationService;
