@@ -14,48 +14,52 @@ using BoardGamesStore.Models.Entities;
 using BoardGamesStore.Interfaces;
 using Microsoft.OpenApi;
 using BoardGamesStore.Controllers;
+using Pgvector.EntityFrameworkCore; // for UseVector()
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<JwtSettings>(
-	builder.Configuration.GetSection("JWT"));
+		builder.Configuration.GetSection("JWT"));
 builder.Services.Configure<SmtpSettings>(
-	builder.Configuration.GetSection("Smtp"));
+		builder.Configuration.GetSection("Smtp"));
 builder.Services.Configure<PaymentSettings>(
-	builder.Configuration.GetSection("LiqPay"));
+		builder.Configuration.GetSection("LiqPay"));
 
 builder.Services.AddCors(options =>
 {
 	options.AddPolicy("AllowAll", policy =>
-		{
-			policy.AllowAnyOrigin()
+	{
+		policy.AllowAnyOrigin()
 						.AllowAnyMethod()
 						.AllowAnyHeader();
-		});
+	});
 
 	options.AddPolicy("AllowSpecificOrigins", policy =>
-		{
-			policy.WithOrigins("http://localhost:3000", "https://yourdomain.com")
+	{
+		policy.WithOrigins("http://localhost:3000", "https://yourdomain.com")
 						.AllowAnyMethod()
 						.AllowAnyHeader()
 						.AllowCredentials();
-		});
+	});
 });
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+		?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-	options.UseNpgsql(connectionString));
+		options.UseNpgsql(connectionString, npgsqlOptions => npgsqlOptions.UseVector()));
+
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddIdentity<User, IdentityRole>(options =>
-	{
-		options.Password.RequireDigit = true;
-		options.Password.RequiredLength = 8;
-		options.SignIn.RequireConfirmedAccount = false; // FIXME: видалити пізніше
-	})
-	.AddEntityFrameworkStores<ApplicationDbContext>()
-	.AddDefaultTokenProviders()
-	.AddRoles<IdentityRole>();
+		{
+			options.Password.RequireDigit = true;
+			options.Password.RequiredLength = 8;
+			options.SignIn.RequireConfirmedAccount = false; // FIXME: видалити пізніше
+		})
+		.AddEntityFrameworkStores<ApplicationDbContext>()
+		.AddDefaultTokenProviders()
+		.AddRoles<IdentityRole>();
 
 var secret = builder.Configuration["JWT:Secret"];
 var issuer = builder.Configuration["JWT:Issuer"];
@@ -97,8 +101,8 @@ builder.Services.AddControllersWithViews();
 
 // builder.Services.AddStackExchangeRedisCache(options =>
 // {
-// 	options.Configuration = builder.Configuration.GetConnectionString("Valkey");
-// 	options.InstanceName = "BGS_";
+//     options.Configuration = builder.Configuration.GetConnectionString("Valkey");
+//     options.InstanceName = "BGS_";
 // });
 
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
@@ -113,6 +117,7 @@ builder.Services.AddSingleton(serviceProvider =>
 	};
 	return provider.Create(policy);
 });
+
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
@@ -136,6 +141,7 @@ builder.Services.AddHostedService<ProductRatingRefreshService>();
 
 builder.Services.AddRazorPages();
 
+// You normally don't need to hard-set this; leaving as-is if you rely on it.
 builder.Environment.EnvironmentName = "Development";
 
 builder.Services.AddEndpointsApiExplorer();
@@ -209,11 +215,14 @@ if (app.Environment.IsDevelopment())
 else
 {
 	app.UseExceptionHandler("/Home/Error");
-	// The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
 	app.UseHsts();
 }
 
-//app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
+
+// Serve static files from wwwroot (replacement for MapStaticAssets/WithStaticAssets)
+app.UseStaticFiles();
+
 app.UseRouting();
 
 app.UseCors("AllowAll");
@@ -221,16 +230,16 @@ app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapStaticAssets();
 app.MapControllers();
 
 app.MapControllerRoute(
-	name: "default",
-	pattern: "{controller=Home}/{action=Index}/{id?}")
-	.WithStaticAssets();
+		name: "default",
+		pattern: "{controller=Home}/{action=Index}/{id?}")
+		.WithStaticAssets();
 
-app.MapRazorPages()
-	.WithStaticAssets();
+app.MapRazorPages().WithStaticAssets();
+
+app.UseStaticFiles();
 
 app.UseStaticFiles();
 

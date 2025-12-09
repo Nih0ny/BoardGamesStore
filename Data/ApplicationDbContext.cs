@@ -39,6 +39,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         // Product entity
         modelBuilder.Entity<Product>(entity =>
         {
+            entity.Property(p => p.Embedding)
+                .HasColumnName("embedding")  // match your existing column
+                .HasColumnType("vector(384)");
+        });
+
+        modelBuilder.Entity<Product>(entity =>
+        {
             entity.ToTable("products");
             entity.HasKey(p => p.Id);
             entity.Property(p => p.Name).IsRequired().HasMaxLength(255);
