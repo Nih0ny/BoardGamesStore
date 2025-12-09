@@ -192,6 +192,7 @@ using (var scope = app.Services.CreateScope())
 	}
 
 	var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+	var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
 
 	string[] roleNames = ["Admin", "User"];
 	IdentityResult roleResult;
@@ -202,6 +203,35 @@ using (var scope = app.Services.CreateScope())
 		if (!roleExist)
 		{
 			roleResult = await roleManager.CreateAsync(new IdentityRole(roleName));
+		}
+	}
+
+	// Create admin user if it doesn't exist
+	var adminEmail = "admin@example.com";
+	var adminPassword = "Admin_12345";
+	var adminUser = await userManager.FindByEmailAsync(adminEmail);
+
+	if (adminUser == null)
+	{
+		var newAdmin = new User
+		{
+			UserName = "admin",
+			Email = adminEmail,
+			EmailConfirmed = true,
+			CreatedAt = DateTime.UtcNow,
+			UpdatedAt = DateTime.UtcNow
+		};
+
+		var createAdminResult = await userManager.CreateAsync(newAdmin, adminPassword);
+		if (createAdminResult.Succeeded)
+		{
+			await userManager.AddToRoleAsync(newAdmin, "Admin");
+			Console.WriteLine("Admin user created successfully.");
+		}
+		else
+		{
+			var logger = services.GetRequiredService<ILogger<Program>>();
+			logger.LogError("Failed to create admin user: {Errors}", string.Join(", ", createAdminResult.Errors.Select(e => e.Description)));
 		}
 	}
 }
