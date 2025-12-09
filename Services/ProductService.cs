@@ -298,6 +298,11 @@ public class ProductService(ApplicationDbContext context) : IProductService
         return Result.Fail("Discount must be between 0 and 1 percent.");
     }
 
+    if (dto.DiscountPercent != 0)
+    {
+      // FIXME: Notify User
+    }
+
     try
     {
       product.DiscountPercent = dto.DiscountPercent;
