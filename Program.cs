@@ -41,7 +41,7 @@ builder.Services.AddCors(options =>
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-	options.UseNpgsql(connectionString));
+	options.UseNpgsql(connectionString, npgsqlOptions => npgsqlOptions.UseVector()));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddIdentity<User, IdentityRole>(options =>
