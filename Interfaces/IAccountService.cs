@@ -12,4 +12,5 @@ public interface IAccountService
   Task<IdentityResult> ChangePasswordAsync(string email, ChangePasswordDto changePasswordDto);
   Task<IdentityResult> ForgotPasswordAsync(ForgotPasswordDto forgotPasswordDto);
   Task<IdentityResult> ResetPasswordAsync(string email, string token, string newPassword);
+  Task<Result> DeleteAccountAsync(string userId);
 }

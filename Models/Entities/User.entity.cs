@@ -5,6 +5,7 @@ namespace BoardGamesStore.Models.Entities;
 public class User : IdentityUser
 {
   public decimal Coins { get; set; }
+  public string? AvatarUrl { get; set; }
   public DateTime CreatedAt { get; set; }
   public DateTime UpdatedAt { get; set; }
   public bool IsDeleted { get; set; }

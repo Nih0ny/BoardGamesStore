@@ -153,20 +153,20 @@ public class AccountsController(IAccountService accountService, ITokenService to
   // FIXME: Implement account deletion in AccountService
   [Authorize]
   [HttpDelete]
-  public async Task<IActionResult> DeleteAccount()
+  public async Task<IActionResult> DeleteAccount(CancellationToken ct)
   {
-    var email = User.FindFirstValue(ClaimTypes.Email);
-    if (email == null)
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (userId == null)
     {
       return Unauthorized();
     }
 
-    // var result = await _accountService.DeleteAccountAsync(email);
-    // if (result)
-    // {
-    //   return Ok(new { Message = "Account deleted successfully." });
-    // }
+    var result = await _accountService.DeleteAccountAsync(userId);
+    if (result.IsSuccess)
+    {
+      return Ok(new { Message = "Account deleted successfully." });
+    }
 
-    return BadRequest(new { Message = "Failed to delete account." });
+    return BadRequest(new { Errors = result.Errors.Select(e => e.Message) });
   }
 }

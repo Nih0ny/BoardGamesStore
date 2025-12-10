@@ -24,13 +24,35 @@ public class AccountService(
   public async Task<IdentityResult> RegisterUserAsync(RegisterDto registerDto)
   {
     var user = await _userManager.FindByEmailAsync(registerDto.Email);
-    if (user != null && await _userManager.IsEmailConfirmedAsync(user))
+
+    // If user exists, check if they can re-register
+    if (user != null && await _userManager.IsEmailConfirmedAsync(user) && !user.IsDeleted)
     {
       return IdentityResult.Failed(new IdentityError { Description = "Email is already registered." });
     }
 
-    if (user == null)
+    // If user was deleted, restore and update password
+    if (user != null && user.IsDeleted)
     {
+      user.IsDeleted = false;
+      user.UpdatedAt = DateTime.UtcNow;
+
+      // Update password
+      var removePasswordResult = await _userManager.RemovePasswordAsync(user);
+      if (!removePasswordResult.Succeeded)
+        return removePasswordResult;
+
+      var addPasswordResult = await _userManager.AddPasswordAsync(user, registerDto.Password);
+      if (!addPasswordResult.Succeeded)
+        return addPasswordResult;
+
+      var updateResult = await _userManager.UpdateAsync(user);
+      if (!updateResult.Succeeded)
+        return updateResult;
+    }
+    else if (user == null)
+    {
+      // Create new user
       user = new User { UserName = registerDto.Name, Email = registerDto.Email };
       if (!(await _userManager.CreateAsync(user, registerDto.Password)).Succeeded)
       {
@@ -56,7 +78,7 @@ public class AccountService(
   public async Task<Result<(string AccessToken, string RefreshToken)>> LoginUserAsync(LoginDto loginDto)
   {
     var user = await _userManager.FindByEmailAsync(loginDto.Email);
-    if (user == null || /*!await _userManager.IsEmailConfirmedAsync(user)*/false) // FIXME: тимчасово вимкнено підтвердження email
+    if (user == null || user.IsDeleted || /*!await _userManager.IsEmailConfirmedAsync(user)*/false) // FIXME: тимчасово вимкнено підтвердження email
     {
       return Result.Fail("Invalid login credentials.");
     }
@@ -87,7 +109,7 @@ public class AccountService(
   public async Task<IdentityResult> ChangePasswordAsync(string email, ChangePasswordDto changePasswordDto)
   {
     var user = await _userManager.FindByEmailAsync(email);
-    if (user == null)
+    if (user == null || user.IsDeleted)
     {
       return IdentityResult.Failed(new IdentityError { Description = "User not found." });
     }
@@ -98,7 +120,7 @@ public class AccountService(
   public async Task<IdentityResult> ForgotPasswordAsync(ForgotPasswordDto forgotPasswordDto)
   {
     var user = await _userManager.FindByEmailAsync(forgotPasswordDto.Email);
-    if (user == null || !await _userManager.IsEmailConfirmedAsync(user))
+    if (user == null || user.IsDeleted || !await _userManager.IsEmailConfirmedAsync(user))
     {
       return IdentityResult.Failed(new IdentityError { Description = "User not found or email not confirmed." });
     }
@@ -125,5 +147,27 @@ public class AccountService(
     }
 
     return await _userManager.ResetPasswordAsync(user, token, newPassword);
+  }
+
+  public async Task<Result> DeleteAccountAsync(string userId)
+  {
+    var user = await _userManager.FindByIdAsync(userId);
+    if (user == null)
+      return Result.Fail("User not found.");
+
+    try
+    {
+      user.IsDeleted = true;
+      user.UpdatedAt = DateTime.UtcNow;
+      var result = await _userManager.UpdateAsync(user);
+      if (!result.Succeeded)
+        return Result.Fail(string.Join(", ", result.Errors.Select(e => e.Description)));
+
+      return Result.Ok();
+    }
+    catch (Exception ex)
+    {
+      return Result.Fail($"Error deleting account: {ex.Message}");
+    }
   }
 }
