@@ -42,12 +42,12 @@ public class ProductsController(IProductService productService, IProductImageSer
 		return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
 	}
 
-	[HttpPut("{id:int}")]
+	[HttpPatch("{id:int}")]
 	[Authorize(Roles = "Admin")]
 	public async Task<IActionResult> Update(int id, [FromBody] UpdateProductDto dto, CancellationToken ct)
 	{
 		var result = await _productService.UpdateAsync(id, dto, ct);
-		return result.IsSuccess ? NoContent() : NotFound();
+		return result.IsSuccess ? Ok() : NotFound();
 	}
 
 	[HttpDelete("{id:int}")]

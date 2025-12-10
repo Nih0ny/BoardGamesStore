@@ -150,7 +150,6 @@ public class AccountsController(IAccountService accountService, ITokenService to
     return Ok(user);
   }
 
-  // FIXME: Implement account deletion in AccountService
   [Authorize]
   [HttpDelete]
   public async Task<IActionResult> DeleteAccount(CancellationToken ct)

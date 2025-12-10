@@ -36,11 +36,11 @@ public class CreateProductDto
 
 public class UpdateProductDto
 {
-    public string Name { get; init; } = null!;
-    public List<string> Categories { get; init; } = null!;
-    public decimal Price { get; init; }
+    public string? Name { get; init; }
+    public List<string>? Categories { get; init; }
+    public decimal? Price { get; init; }
     public string? Description { get; init; }
-    public bool InStockOnly { get; init; }
+    public int? Stock { get; init; }
 }
 
 public class ProductDto

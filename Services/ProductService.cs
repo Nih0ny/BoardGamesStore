@@ -194,6 +194,26 @@ public class ProductService(ApplicationDbContext context) : IProductService
     return MapProductToDto(product);
   }
 
+  public async Task<Result> DeleteAsync(int id, CancellationToken ct = default)
+  {
+    var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id, ct);
+    if (product == null)
+      return Result.Fail($"Product with ID {id} not found.");
+
+    try
+    {
+      product.IsDeleted = true;
+      product.UpdatedAt = DateTime.UtcNow;
+      _context.Products.Update(product);
+      await _context.SaveChangesAsync(ct);
+      return Result.Ok();
+    }
+    catch (Exception ex)
+    {
+      return Result.Fail($"Error deleting product: {ex.Message}");
+    }
+  }
+
   public async Task<Result> UpdateAsync(int id, UpdateProductDto dto, CancellationToken ct = default)
   {
     var product = await _context.Products
@@ -205,13 +225,17 @@ public class ProductService(ApplicationDbContext context) : IProductService
 
     try
     {
-      product.Name = dto.Name;
-      product.Description = dto.Description;
-      product.Price = dto.Price;
-      product.UpdatedAt = DateTime.UtcNow;
+      // Update only provided fields
+      if (!string.IsNullOrEmpty(dto.Name))
+        product.Name = dto.Name;
 
-      _context.Products.Update(product);
+      if (dto.Price.HasValue && dto.Price.Value > 0)
+        product.Price = dto.Price.Value;
 
+      if (dto.Description != null)
+        product.Description = dto.Description;
+
+      // Update categories if provided
       if (dto.Categories != null)
       {
         _context.ProductCategories.RemoveRange(product.Categories);
@@ -230,24 +254,6 @@ public class ProductService(ApplicationDbContext context) : IProductService
         }
       }
 
-      await _context.SaveChangesAsync(ct);
-      return Result.Ok();
-    }
-    catch (Exception ex)
-    {
-      return Result.Fail($"Error updating product: {ex.Message}");
-    }
-  }
-
-  public async Task<Result> DeleteAsync(int id, CancellationToken ct = default)
-  {
-    var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id, ct);
-    if (product == null)
-      return Result.Fail($"Product with ID {id} not found.");
-
-    try
-    {
-      product.IsDeleted = true;
       product.UpdatedAt = DateTime.UtcNow;
       _context.Products.Update(product);
       await _context.SaveChangesAsync(ct);
@@ -255,7 +261,7 @@ public class ProductService(ApplicationDbContext context) : IProductService
     }
     catch (Exception ex)
     {
-      return Result.Fail($"Error deleting product: {ex.Message}");
+      return Result.Fail($"Error updating product: {ex.Message}");
     }
   }
 

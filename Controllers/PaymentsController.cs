@@ -12,9 +12,6 @@ public class PaymentsController(IPaymentService paymentService) : Controller
 {
   private readonly IPaymentService _paymentService = paymentService;
 
-  /// <summary>
-  /// Processes a payment for an order.
-  /// </summary>
   [HttpPost("orders/{orderId:int}")]
   public async Task<IActionResult> ProcessPayment(int orderId, [FromServices] IHttpContextAccessor httpContextAccessor)
   {
@@ -28,9 +25,6 @@ public class PaymentsController(IPaymentService paymentService) : Controller
     return BadRequest("Payment processing failed");
   }
 
-  /// <summary>
-  /// Handles payment gateway callbacks.
-  /// </summary>
   [HttpPost("callback")]
   public async Task<IActionResult> PaymentCallback()
   {
