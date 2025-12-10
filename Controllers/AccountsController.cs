@@ -10,10 +10,11 @@ namespace BoardGamesStore.Controllers;
 
 [ApiController]
 [Route("api/accounts")]
-public class AccountsController(IAccountService accountService, ITokenService tokenService) : ControllerBase
+public class AccountsController(IAccountService accountService, ITokenService tokenService, IUserService userService) : ControllerBase
 {
   private readonly IAccountService _accountService = accountService;
   private readonly ITokenService _tokenService = tokenService;
+  private readonly IUserService _userService = userService;
 
   [HttpPost("register")]
   public async Task<IActionResult> Register(RegisterDto registerDto)
@@ -132,16 +133,21 @@ public class AccountsController(IAccountService accountService, ITokenService to
 
   [Authorize]
   [HttpGet("me")]
-  public IActionResult GetCurrentUser()
+  public async Task<IActionResult> GetCurrentUser(CancellationToken ct)
   {
-
-    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null)
     {
       return Unauthorized();
     }
 
-    return Ok(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+    var user = await _userService.GetUserByIdAsync(userId, ct);
+    if (user == null)
+    {
+      return NotFound(new { Message = "User not found." });
+    }
+
+    return Ok(user);
   }
 
   // FIXME: Implement account deletion in AccountService
