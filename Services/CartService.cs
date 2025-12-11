@@ -34,7 +34,8 @@ public class CartService(ApplicationDbContext context) : ICartService
             ProductName = ci.Product.Name,
             ProductId = ci.ProductId,
             Quantity = ci.Quantity,
-            Price = ci.Product.Price
+            Price = ci.Product.Price,
+            ImageUrl = ci.Product.ImageUrl!
           }).ToList(),
           TotalSum = u.CartItems!.Sum(ci => ci.Product.Price * ci.Quantity)
         })
@@ -63,7 +64,8 @@ public class CartService(ApplicationDbContext context) : ICartService
           ProductId = ci.ProductId,
           ProductName = ci.Product.Name,
           Quantity = ci.Quantity,
-          Price = ci.Product.Price
+          Price = ci.Product.Price,
+          ImageUrl = ci.Product.ImageUrl!
         }).ToList(),
         TotalSum = u.CartItems!.Sum(ci => ci.Product.Price * ci.Quantity)
       })

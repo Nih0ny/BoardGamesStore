@@ -12,7 +12,7 @@ public class ProductImageService(ApplicationDbContext context, IWebHostEnvironme
   private readonly ApplicationDbContext _context = context;
   private readonly IWebHostEnvironment _env = env;
   private const int MaxFileSizeMb = 5;
-  private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+  private static readonly string[] AllowedExtensions = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
 
   public async Task<Result<ProductImageUploadResult>> UploadImageAsync(int productId, IFormFile file, bool isMainImage = false, CancellationToken ct = default)
   {

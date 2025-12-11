@@ -14,6 +14,7 @@ public class CartItemDto
   public string ProductName { get; init; } = null!;
   public int Quantity { get; init; }
   public decimal Price { get; init; }
+  public string ImageUrl { get; init; } = null!;
 }
 
 public class AddCartItemDto

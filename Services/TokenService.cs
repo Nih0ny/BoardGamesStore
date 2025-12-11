@@ -28,7 +28,6 @@ public class TokenService(
   {
     var userRoles = await _userManager.GetRolesAsync(user);
 
-    Console.WriteLine("JWT Settings: ", _jwtSettings);
     var authClaims = new List<Claim>
     {
         new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
